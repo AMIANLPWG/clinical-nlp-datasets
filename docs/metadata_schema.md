@@ -1,7 +1,7 @@
 ## Metadata Schema: Variable Definitions and Controlled Vocabularies
 
 > **Version:** 1.0  
-> **Maintainer:** AMIA NLP Working Group — Dataset Standardization Subgroup  
+> **Maintainer:** AMIA NLP Working Group
 > **License:** CC BY 4.0  
 > **FAIR Alignment:** Findability · Accessibility · Interoperability · Reusability
 
