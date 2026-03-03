@@ -1,0 +1,377 @@
+name: Dataset Submission
+description: Submit a new clinical or biomedical NLP dataset to the AMIA NLP Working Group Registry
+title: "[Dataset Submission] <Dataset Name>"
+labels: ["dataset-submission", "needs-review"]
+body:
+
+  - type: markdown
+    attributes:
+      value: |
+        ## Submitter Information
+        *This section is for internal use only and will not be published.*
+
+  - type: input
+    id: submitter_name
+    attributes:
+      label: Your Name
+    validations:
+      required: true
+
+  - type: input
+    id: submitter_institution
+    attributes:
+      label: Your Institution
+    validations:
+      required: true
+
+  - type: input
+    id: submitter_contact
+    attributes:
+      label: Your Email or ORCID
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        ## Dataset Metadata
+        Please fill in all fields. For optional fields, enter `N/A` if not applicable.  
+        Refer to [`metadata_schema.md`](../docs/metadata_schema.md) for full definitions and controlled vocabularies.
+
+  - type: input
+    id: dataset_name
+    attributes:
+      label: "1. Dataset Name"
+      description: Short canonical name used for indexing.
+      placeholder: "e.g. MIMIC-III Clinical Notes"
+    validations:
+      required: true
+
+  - type: input
+    id: title_official
+    attributes:
+      label: "2. Title / Official Name"
+      description: Full formal name as used in the primary publication or repository.
+      placeholder: "e.g. Medical Information Mart for Intensive Care III"
+    validations:
+      required: true
+
+  - type: input
+    id: pid
+    attributes:
+      label: "3. Persistent Identifier (PID)"
+      description: DOI, PhysioNet accession number, or other permanent identifier. Enter N/A if none exists.
+      placeholder: "e.g. 10.13026/C2XW26"
+    validations:
+      required: true
+
+  - type: input
+    id: domain
+    attributes:
+      label: "4. Domain"
+      description: Primary biomedical or clinical domain.
+      placeholder: "e.g. Radiology, Oncology, General Medicine"
+    validations:
+      required: true
+
+  - type: input
+    id: document_source_type
+    attributes:
+      label: "5. Document / Source Type"
+      description: Type(s) of clinical or biomedical documents included.
+      placeholder: "e.g. Discharge summaries, Radiology reports, PubMed abstracts"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: clinical_setting
+    attributes:
+      label: "6. Clinical Setting"
+      description: Healthcare setting in which the source data were collected.
+      options:
+        - ICU
+        - Inpatient
+        - Outpatient
+        - Emergency Department
+        - Radiology
+        - Pathology
+        - Multi-setting
+        - N/A
+    validations:
+      required: true
+
+  - type: input
+    id: short_name
+    attributes:
+      label: "7. Short Name / Acronym"
+      description: Abbreviated label commonly used in the literature.
+      placeholder: "e.g. MIMIC-III, n2c2 2018"
+
+  - type: input
+    id: num_documents
+    attributes:
+      label: "8. Number of Documents / Notes"
+      description: Total count of documents or records.
+      placeholder: "e.g. 53,423 notes"
+    validations:
+      required: true
+
+  - type: input
+    id: authors
+    attributes:
+      label: "9. Authors / Curators / Contributors"
+      description: Who created or maintains the dataset.
+      placeholder: "e.g. Johnson et al.; MIT Lab for Computational Physiology"
+    validations:
+      required: true
+
+  - type: input
+    id: institution
+    attributes:
+      label: "10. Institution / Hosting Organization"
+      description: Organization responsible for hosting the dataset.
+      placeholder: "e.g. MIT / PhysioNet, Hugging Face"
+    validations:
+      required: true
+
+  - type: input
+    id: note_subtype
+    attributes:
+      label: "11. Note Section / Subtype"
+      description: Specific note sections targeted, if applicable.
+      placeholder: "e.g. HPI, Assessment, Plan — or N/A"
+
+  - type: dropdown
+    id: language
+    attributes:
+      label: "12. Language(s)"
+      description: Primary language(s) of the documents. If multilingual or unlisted, select Other and specify in Additional Notes.
+      options:
+        - English
+        - Chinese
+        - Spanish
+        - Portuguese
+        - French
+        - German
+        - Multilingual
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: time_period
+    attributes:
+      label: "13. Time Period / Collection Date Span"
+      description: Temporal range of data collection.
+      placeholder: "e.g. 2001–2012, or Not reported"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: annotation_tasks
+    attributes:
+      label: "14. Annotation Types / Levels / Tasks"
+      description: Select all that apply.
+      options:
+        - label: NER
+        - label: Relation Extraction
+        - label: Coreference Resolution
+        - label: Text Classification
+        - label: De-identification
+        - label: ICD Coding
+        - label: Temporal Extraction
+        - label: Section Segmentation
+        - label: Assertion / Negation
+        - label: Summarization
+        - label: QA
+        - label: Multi-task
+
+  - type: input
+    id: annotation_schema
+    attributes:
+      label: "15. Annotation Schema / Ontologies / Vocabularies"
+      description: Standards used for annotation.
+      placeholder: "e.g. UMLS, SNOMED CT, ICD-10, BRAT standoff format"
+    validations:
+      required: true
+
+  - type: input
+    id: annotation_quality
+    attributes:
+      label: "16. Annotation Quality / Inter-annotator Agreement / Kappa / F1"
+      description: Reported reliability metrics. Enter "Not reported" if unavailable.
+      placeholder: "e.g. Inter-annotator Kappa = 0.85, micro-F1 = 0.78"
+    validations:
+      required: true
+
+  - type: input
+    id: train_test_split
+    attributes:
+      label: "17. Training / Test Split / Partitioning"
+      description: Partition details. Enter "No official split provided" if applicable.
+      placeholder: "e.g. 80% train / 10% dev / 10% test; 40k / 5k / 5k notes"
+    validations:
+      required: true
+
+  - type: input
+    id: preprocessing
+    attributes:
+      label: "18. Processing / Pre-processing / DEID"
+      description: Transformations applied prior to release.
+      placeholder: "e.g. HIPAA Safe Harbor de-identification, tokenized — or None reported"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: "19. Version"
+      description: Version number or release tag.
+      placeholder: "e.g. v1.0, v2025-05-01 — or N/A"
+    validations:
+      required: true
+
+  - type: input
+    id: last_update
+    attributes:
+      label: "20. Last Update"
+      description: Year or date of most recent public release or update.
+      placeholder: "e.g. 2024, 2018-06-15"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: access_conditions
+    attributes:
+      label: "21. Access / Use Conditions"
+      options:
+        - Open
+        - Restricted
+    validations:
+      required: true
+
+  - type: input
+    id: access_mechanism
+    attributes:
+      label: "22. Access Mechanism"
+      description: How to obtain the dataset.
+      placeholder: "e.g. PhysioNet credentialed access portal, direct download from GitHub"
+    validations:
+      required: true
+
+  - type: textarea
+    id: citation
+    attributes:
+      label: "23. Citation / Reference"
+      description: Primary publication in full bibliographic format.
+      placeholder: "e.g. Johnson et al. (2016). MIMIC-III, a freely accessible critical care database. Scientific Data, 3, 160035."
+    validations:
+      required: true
+
+  - type: input
+    id: related_datasets
+    attributes:
+      label: "24. Related Datasets / Dependencies"
+      description: Datasets this corpus builds on or overlaps with.
+      placeholder: "e.g. Derived from MIMIC-III Clinical Notes — or N/A"
+
+  - type: input
+    id: use_cases
+    attributes:
+      label: "25. Use Cases / Known Applications"
+      description: NLP tasks or research applications.
+      placeholder: "e.g. Medication extraction, Clinical phenotyping, De-identification"
+
+  - type: textarea
+    id: limitations
+    attributes:
+      label: "26. Limitations / Caveats"
+      description: Known biases, coverage gaps, or risks.
+      placeholder: "e.g. Adult ICU patients only; limited generalizability to outpatient settings"
+    validations:
+      required: true
+
+  - type: input
+    id: license
+    attributes:
+      label: "27. License / Terms of Use"
+      description: Explicit licensing terms.
+      placeholder: "e.g. CC BY 4.0, PhysioNet Credentialed Health Data License 1.5.0"
+    validations:
+      required: true
+
+  - type: input
+    id: ethics_irb
+    attributes:
+      label: "28. Ethics / IRB / Privacy Protections"
+      description: Ethical approvals and privacy safeguards applied.
+      placeholder: "e.g. HIPAA Safe Harbor de-identification; IRB waiver granted — or Not reported"
+    validations:
+      required: true
+
+  - type: input
+    id: format
+    attributes:
+      label: "29. Format / File Types / Schema"
+      description: Data storage formats and schema specifications.
+      placeholder: "e.g. Plain text + XML (BRAT standoff), JSON, CoNLL, BIO-tagged TSV"
+    validations:
+      required: true
+
+  - type: input
+    id: encoding
+    attributes:
+      label: "30. Encoding / Character Set"
+      description: Character encoding used.
+      placeholder: "e.g. UTF-8 — or N/A"
+
+  - type: input
+    id: reuse_tools
+    attributes:
+      label: "31. Reuse / Interoperability Tools / Code"
+      description: Accompanying tools, scripts, or APIs.
+      placeholder: "e.g. Python loader, Hugging Face datasets loader — or N/A"
+
+  - type: input
+    id: repository_urls
+    attributes:
+      label: "32. Repository / Hosting / Mirror URLs"
+      description: Official URL(s) where the dataset is hosted.
+      placeholder: "e.g. https://physionet.org/content/mimiciii/"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: llm_leakage
+    attributes:
+      label: "33. Indicating Whether Data Is Used by LLM Training / Data Leakage"
+      options:
+        - "Yes"
+        - "Possibly"
+        - "No"
+        - "Unknown"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_notes
+    attributes:
+      label: Additional Notes
+      description: Any context, caveats, or clarifications not captured above.
+
+  - type: checkboxes
+    id: submission_checklist
+    attributes:
+      label: Submission Checklist
+      options:
+        - label: All required fields are filled in
+          required: true
+        - label: No fields are left blank — optional fields use N/A
+          required: true
+        - label: Controlled vocabulary fields use only the listed values
+          required: true
+        - label: Citation is in full bibliographic format
+          required: true
+        - label: Repository URL is a direct, working link
+          required: true
