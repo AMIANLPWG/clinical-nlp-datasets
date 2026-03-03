@@ -1,1 +1,185 @@
-1
+name: Dataset Submission
+description: Submit a new clinical or biomedical NLP dataset to the registry
+title: "[Dataset Submission]: "
+labels: ["dataset-submission"]
+assignees: []
+
+body:
+
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for contributing to the AMIA Clinical & Biomedical NLP Dataset Registry.
+
+        Please complete all required fields. Submissions may be rejected if insufficient information is provided.
+
+  # -----------------------
+  # 1. Dataset Identification
+  # -----------------------
+
+  - type: input
+    id: dataset_name
+    attributes:
+      label: Dataset Name
+      description: Official dataset name
+      placeholder: e.g., MIMIC-IV-Note
+    validations:
+      required: true
+
+  - type: input
+    id: short_name
+    attributes:
+      label: Short Name / Acronym
+      placeholder: e.g., MIMIC-IV
+
+  - type: input
+    id: pid
+    attributes:
+      label: Persistent Identifier (DOI / URL)
+      placeholder: https://doi.org/...
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+
+  - type: input
+    id: year
+    attributes:
+      label: Year of Release / Last Update
+
+  # -----------------------
+  # 2. Domain & Context
+  # -----------------------
+
+  - type: input
+    id: domain
+    attributes:
+      label: Primary Domain
+      placeholder: Cardiology, Oncology, General Medicine
+
+  - type: dropdown
+    id: clinical_setting
+    attributes:
+      label: Clinical Setting
+      options:
+        - ICU
+        - Inpatient
+        - Outpatient
+        - Emergency Department
+        - Radiology
+        - Pathology
+        - Multi-setting
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: document_type
+    attributes:
+      label: Document / Source Type
+      placeholder: Clinical notes, Radiology reports, Biomedical literature
+
+  - type: input
+    id: language
+    attributes:
+      label: Language(s)
+      placeholder: English
+
+  # -----------------------
+  # 3. NLP Task & Annotation
+  # -----------------------
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Primary NLP Task(s)
+      description: e.g., NER, Relation Extraction, QA, ICD Coding
+    validations:
+      required: true
+
+  - type: input
+    id: annotation_schema
+    attributes:
+      label: Annotation Schema / Ontology
+      placeholder: UMLS, SNOMED CT, ICD-10
+
+  - type: input
+    id: annotation_quality
+    attributes:
+      label: Annotation Quality Metrics
+      placeholder: Cohen’s kappa, F1 score
+
+  # -----------------------
+  # 4. Access & Governance
+  # -----------------------
+
+  - type: dropdown
+    id: access_type
+    attributes:
+      label: Access Type
+      options:
+        - Open Access
+        - Controlled Access
+    validations:
+      required: true
+
+  - type: textarea
+    id: access_procedure
+    attributes:
+      label: Access Procedure (if controlled)
+
+  - type: input
+    id: license
+    attributes:
+      label: License / Terms of Use
+      placeholder: CC BY 4.0, Custom DUA, etc.
+
+  - type: textarea
+    id: ethics
+    attributes:
+      label: Ethics / IRB Information
+
+  # -----------------------
+  # 5. Provenance
+  # -----------------------
+
+  - type: input
+    id: authors
+    attributes:
+      label: Authors / Curators
+
+  - type: input
+    id: institution
+    attributes:
+      label: Hosting Institution
+
+  - type: input
+    id: publication
+    attributes:
+      label: Primary Publication (citation or URL)
+
+  - type: input
+    id: repository_url
+    attributes:
+      label: Official Repository / Hosting URL
+    validations:
+      required: true
+
+  # -----------------------
+  # 6. Additional Notes
+  # -----------------------
+
+  - type: textarea
+    id: limitations
+    attributes:
+      label: Known Limitations / Notes
+
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        By submitting this dataset, you confirm that:
+        - The dataset meets the registry Screening Criteria.
+        - The dataset is publicly accessible or has a documented access process.
+        - The information provided is accurate to the best of your knowledge.
