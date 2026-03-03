@@ -2,7 +2,6 @@
 
 > **Version:** 1.0  
 > **Maintainer:** AMIA NLP Working Group
-> **FAIR Alignment:** Findability · Accessibility · Interoperability · Reusability
 
 ---
 
