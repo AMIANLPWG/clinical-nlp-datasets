@@ -77,6 +77,7 @@ The framework is aligned with [FAIR data principles](https://www.go-fair.org/fai
 ```
 /
 ├── README.md                        # This file
+├── LICENSE
 ├── CONTRIBUTING.md                  # How to submit new datasets
 │
 ├── data/
