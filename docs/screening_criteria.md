@@ -3,7 +3,7 @@
 
 > **Version:** 1.0  
 > **Date:** January 2026  
-> **Maintainer:** AMIA NLP Working Group — Dataset Standardization Subgroup
+> **Maintainer:** AMIA NLP Working Group
 
 ---
 
@@ -24,7 +24,7 @@ The dataset is accessible to the public, either through open access (freely down
 The dataset is primarily composed of clinical or biomedical text data (e.g., clinical notes, discharge summaries, radiology reports, pathology reports, biomedical literature).
 
 **I3. NLP Task Relevance**  
-The dataset is designed for or has been used in at least one NLP task, including but not limited to: named entity recognition (NER), relation extraction, text classification, question answering (QA), summarization, de-identification, ICD coding, or temporal extraction.
+The dataset is designed for, or has been used in, at least one NLP task, including but not limited to named entity recognition (NER), relation extraction, text classification, question answering (QA), summarization, de-identification, ICD coding, or temporal extraction.
 
 ---
 
@@ -45,7 +45,7 @@ The dataset lacks sufficient documentation (e.g., no publication, no README, no 
 
 ## Application of Criteria
 
-Screening was applied during the initial candidate review phase. After screening, approximately **60+ datasets** were retained for metadata abstraction.
+Screening was applied during the initial candidate review phase. After screening, approximately **60 datasets** were retained for metadata abstraction.
 
 Where a dataset presented borderline eligibility (e.g., partial text content, indirect NLP relevance), final inclusion decisions were made through working group discussion and recorded in the reviewer notes field.
 
@@ -55,4 +55,4 @@ Where a dataset presented borderline eligibility (e.g., partial text content, in
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.0 | January 2026 | Initial criteria based on Process Documentation v1.0 |
+| 1.0 | Mar 2026 | Initial criteria based on Process Documentation v1.0 |
