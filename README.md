@@ -38,11 +38,11 @@ This initiative was launched by the AMIA Natural Language Processing Working Gro
 
 | Metric                         | Count                                                                                               |
 | ------------------------------ | --------------------------------------------------------------------------------------------------- |
-| Datasets cataloged             | **63**                                                                                              |
+| Datasets cataloged             | **60**                                                                                              |
 | NLP tasks covered              | NER, Relation Extraction, QA, Summarization, ICD Coding, De-identification, Clinical Trial Matching |
 | Metadata variables per dataset | **30+**                                                                                             |
 | Languages covered              | English                                                                                             |
-| Last updated                   | Feb 2026                                                                                            |
+| Last updated                   | Mar 2026                                                                                            |
 
 **Dataset landscape highlights:**
 
@@ -77,7 +77,6 @@ The framework is aligned with [FAIR data principles](https://www.go-fair.org/fai
 ```
 /
 ├── README.md                        # This file
-├── LICENSE
 ├── CONTRIBUTING.md                  # How to submit new datasets
 │
 ├── data/
@@ -167,6 +166,7 @@ This project was developed collaboratively by contributors from **N institutions
 ---
 
 ## License
+This work is licensed under <a href="https://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International</a><img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="" style="max-width: 1em;max-height:1em;margin-left: .2em;"><img src="https://mirrors.creativecommons.org/presskit/icons/by.svg" alt="" style="max-width: 1em;max-height:1em;margin-left: .2em;">
 
 The metadata catalog is released under [Creative Commons Attribution 4.0 (CC BY 4.0)](LICENSE). Individual datasets retain their own licenses — please consult each dataset's access conditions before use.
 
