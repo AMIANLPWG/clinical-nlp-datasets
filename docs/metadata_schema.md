@@ -1,4 +1,3 @@
-# AMIA NLP Working Group — Clinical & Biomedical NLP Dataset Registry
 ## Metadata Schema: Variable Definitions and Controlled Vocabularies
 
 > **Version:** 1.0  
