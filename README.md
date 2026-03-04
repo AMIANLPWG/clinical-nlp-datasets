@@ -89,6 +89,7 @@ The framework is aligned with [FAIR data principles](https://www.go-fair.org/fai
 │
 ├── docs/
 │   ├── metadata_schema.md        # Metadata field definitions and controlled vocabularies
+├── ├── process_documentation.md  # Data collection and QA methodology
 │   └── screening_criteria.md     # Dataset inclusion and exclusion criteria
 │
 ├── dataset_visualization.html    # Interactive FAIR metadata visualization
