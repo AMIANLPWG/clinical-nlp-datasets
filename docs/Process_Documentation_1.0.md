@@ -7,7 +7,7 @@
 **Date**: January 2026
 
 **Project Goal**: Establish a FAIR, reproducible framework for clinical
-and biomedical NLP datasets and curate a transparent metadata repository
+and biomedical NLP datasets, and curate a transparent metadata repository
 
 # **1. Project Overview**
 
@@ -220,9 +220,6 @@ The repository will include:
 
 -   **Process Documents:** This document and the metadata framework
     specification
-
--   **Visualization Scripts:** Code for generating summary statistics
-    and visualizations
 
 -   **Issue Templates:** Standardized forms for dataset submissions and
     corrections
