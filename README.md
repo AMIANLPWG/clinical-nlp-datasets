@@ -76,26 +76,23 @@ The framework is aligned with [FAIR data principles](https://www.go-fair.org/fai
 
 ```
 /
-├── README.md                        # This file
-├── CONTRIBUTING.md                  # How to submit new datasets
+├── README.md                     # Project overview and usage instructions
+├── CONTRIBUTING.md               # Guidelines for contributing new datasets
+│
+├── .github/
+│   └── ISSUE_TEMPLATE/
+│       └── dataset_submission.yml  # Structured template for dataset submissions
 │
 ├── data/
-│   ├── datasets.csv                 # Full metadata table (machine-readable)
-│   └── datasets_summary.csv         # Key fields only (quick reference)
+│   ├── datasets.csv              # Full metadata table (machine-readable)
+│   └── datasets_summary.csv      # Key fields only (quick reference)
 │
 ├── docs/
-│   ├── metadata_schema.md           # Variable definitions and controlled vocabularies
-│   ├── process_documentation.md     # Data collection and QA methodology
-│   └── screening_criteria.md        # Inclusion/exclusion criteria
+│   ├── metadata_schema.md        # Metadata field definitions and controlled vocabularies
+│   └── screening_criteria.md     # Dataset inclusion and exclusion criteria
 │
-├── templates/
-│   └── dataset_submission_template.md  # Template for new dataset submissions
-│
-├── visualizations/
-│   ├── figures/                     # Generated summary figures
-│   └── scripts/                     # Portion of code for generating charts
-│
-└── index.html                       # Interactive search page (GitHub Pages)
+├── dataset_visualization.html    # Interactive FAIR metadata visualization
+├── index.html                    # GitHub Pages entry point for browsing datasets
 ```
 
 ---
