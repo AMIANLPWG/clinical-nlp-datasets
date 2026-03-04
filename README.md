@@ -159,7 +159,7 @@ If you use this catalog or the metadata framework in your research, please cite:
 
 ## Team & Acknowledgments
 
-This project was developed collaboratively by contributors from **N institutions** through the [AMIA NLP Working Group](https://www.amia.org/communities/natural-language-processing).
+This project was developed collaboratively by contributors from **N institutions** through the [AMIA NLP Working Group](https://amia.org/community/working-groups/natural-language-processing).
 
 ---
 
