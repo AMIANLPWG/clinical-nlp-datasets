@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinical & Biomedical NLP Datasets — AMIA NLP Working Group</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js">
+
+
+
+// ── FIG 9: Sankey — Task → Modality → Granularity (pure D3, no plugin) ───
+(function(){
+  const TASK_C = {
+    'Multiple Tasks':       '#4a5568',
+    'NER':                  '#2d5a8e',
+    'QA':                   '#6c3d7e',
+    'Classification':       '#c0392b',
+    'Entity Normalization': '#27664a',
+    'De-ID':                '#8b5e3c',
+    'Temporal / Event':     '#c45c2a',
+    'NLI':                  '#1a7a7a',
+  };
+  const MOD_C = {
+    'EHR / Clinical Text':         '#2d5a8e',
+    'Biomedical Literature':       '#8b5e3c',
+    'Radiology / Imaging':         '#27664a',
+    'Patient-gen / Sensors':       '#1a7a7a',
+    'Mixed / Other':               '#4a5568',
+  };
+  const GRAN_C = {
+    'Multiple levels':    '#6c3d7e',
+    'Token / Span-level': '#2d5a8e',
+    'Document-level':     '#c0392b',
+    'Sentence-level':     '#b5860d',
+    'Patient-level':      '#27664a',
+  };
+
+  // ── Data ────────────────────────────────────────────────────
+  const TASKS = [
+    {name:'Multiple Tasks', v:35},
+    {name:'NER', v:6},
+    {name:'QA', v:6},
+    {name:'Entity Normalization', v:4},
+    {name:'Classification', v:4},
+    {name:'De-ID', v:3},
+    {name:'Temporal / Event', v:1},
+    {name:'NLI', v:1},
+  ];
+  const MODS = [
+    {name:'EHR / Clinical Text', v:23},
+    {name:'Biomedical Literature', v:17},
+    {name:'Radiology / Imaging', v:14},
+    {name:'Patient-gen / Sensors', v:3},
+    {name:'Mixed / Other', v:3},
+  ];
+  const GRANS = [
+    {name:'Multiple levels', v:32},
+    {name:'Token / Span-level', v:14},
+    {name:'Document-level', v:9},
+    {name:'Sentence-level', v:5},
+  ];
+
+  const TM = [
+    {s:'Multiple Tasks', t:'EHR / Clinical Text', v:12},
+    {s:'Multiple Tasks', t:'Radiology / Imaging', v:9},
+    {s:'Multiple Tasks', t:'Biomedical Literature', v:9},
+    {s:'Multiple Tasks', t:'Patient-gen / Sensors', v:3},
+    {s:'Multiple Tasks', t:'Mixed / Other', v:2},
+    {s:'QA', t:'Biomedical Literature', v:3},
+    {s:'QA', t:'EHR / Clinical Text', v:2},
+    {s:'QA', t:'Radiology / Imaging', v:1},
+    {s:'NER', t:'Biomedical Literature', v:3},
+    {s:'NER', t:'EHR / Clinical Text', v:2},
+    {s:'NER', t:'Radiology / Imaging', v:1},
+    {s:'Classification', t:'EHR / Clinical Text', v:3},
+    {s:'Classification', t:'Biomedical Literature', v:1},
+    {s:'Entity Normalization', t:'EHR / Clinical Text', v:1},
+    {s:'Entity Normalization', t:'Biomedical Literature', v:1},
+    {s:'Entity Normalization', t:'Mixed / Other', v:1},
+    {s:'Entity Normalization', t:'Radiology / Imaging', v:1},
+    {s:'De-ID', t:'Radiology / Imaging', v:2},
+    {s:'De-ID', t:'EHR / Clinical Text', v:1},
+    {s:'Temporal / Event', t:'EHR / Clinical Text', v:1},
+    {s:'NLI', t:'EHR / Clinical Text', v:1},
+  ];
+  const MG = [
+    {s:'EHR / Clinical Text', t:'Multiple levels', v:12},
+    {s:'EHR / Clinical Text', t:'Token / Span-level', v:5},
+    {s:'EHR / Clinical Text', t:'Document-level', v:4},
+    {s:'EHR / Clinical Text', t:'Sentence-level', v:2},
+    {s:'Biomedical Literature', t:'Multiple levels', v:7},
+    {s:'Biomedical Literature', t:'Token / Span-level', v:5},
+    {s:'Biomedical Literature', t:'Document-level', v:4},
+    {s:'Biomedical Literature', t:'Sentence-level', v:1},
+    {s:'Radiology / Imaging', t:'Multiple levels', v:8},
+    {s:'Radiology / Imaging', t:'Token / Span-level', v:3},
+    {s:'Radiology / Imaging', t:'Sentence-level', v:2},
+    {s:'Radiology / Imaging', t:'Document-level', v:1},
+    {s:'Patient-gen / Sensors', t:'Multiple levels', v:3},
+    {s:'Mixed / Other', t:'Multiple levels', v:2},
+    {s:'Mixed / Other', t:'Token / Span-level', v:1},
+  ];
+
+  // ── Layout ───────────────────────────────────────────────────
+  const W = 1100, H = 480;
+  const ml = 140, mr = 140, mt = 28, mb = 12;
+  const w = W - ml - mr, h = H - mt - mb;
+  const NODE_W = 13, PAD = 9;
+  const TOTAL = 60;
+
+  const svg = d3.select('#sankey-chart').append('svg')
+    .attr('viewBox', `0 0 ${W} ${H}`)
+    .attr('width', '100%').style('display','block');
+  const g = svg.append('g').attr('transform', `translate(${ml},${mt})`);
+  const tip = document.getElementById('fair-tip');
+
+  // ── Position nodes ───────────────────────────────────────────
+  function layoutColumn(items, colorMap, xLeft) {
+    const totalH = h - PAD * (items.length - 1);
+    let y = 0;
+    return items.map(d => {
+      const nodeH = Math.max(4, (d.v / TOTAL) * totalH);
+      const node = {...d, x0: xLeft, x1: xLeft + NODE_W, y0: y, y1: y + nodeH,
+                    color: colorMap[d.name] || '#999'};
+      y += nodeH + PAD;
+      return node;
+    });
+  }
+
+  const xT = 0, xM = w / 2 - NODE_W / 2, xG = w - NODE_W;
+  const tNodes = layoutColumn(TASKS, TASK_C, xT);
+  const mNodes = layoutColumn(MODS, MOD_C, xM);
+  const gNodes = layoutColumn(GRANS, GRAN_C, xG);
+
+  const nodeMap = {};
+  [...tNodes, ...mNodes, ...gNodes].forEach(n => { nodeMap[n.name] = n; });
+
+  // ── Draw flows ───────────────────────────────────────────────
+  // Track current y offset for stacking flows within each node
+  const tOut = {}, mIn = {}, mOut = {}, gIn = {};
+  tNodes.forEach(n => { tOut[n.name] = n.y0; });
+  mNodes.forEach(n => { mIn[n.name] = n.y0; mOut[n.name] = n.y0; });
+  gNodes.forEach(n => { gIn[n.name] = n.y0; });
+
+  function flowH(v) { return Math.max(1, (v / TOTAL) * (h - PAD * (TASKS.length-1))); }
+  // Use a shared scale: height proportional to total dataset height
+  const scale = (h - PAD * (TASKS.length - 1)) / TOTAL;
+
+  function drawFlows(links, srcOut, tgtIn, srcNodes, tgtNodes, colorFn) {
+    links.forEach(lk => {
+      const src = nodeMap[lk.s], tgt = nodeMap[lk.t];
+      if (!src || !tgt) return;
+      const fh = Math.max(1, lk.v * scale);
+      const sy0 = srcOut[lk.s], sy1 = sy0 + fh;
+      const ty0 = tgtIn[lk.t], ty1 = ty0 + fh;
+      srcOut[lk.s] += fh;
+      tgtIn[lk.t]  += fh;
+
+      const x0 = src.x1, x1 = tgt.x0;
+      const cx = (x0 + x1) / 2;
+
+      g.append('path')
+        .attr('d', `M${x0},${sy0} C${cx},${sy0} ${cx},${ty0} ${x1},${ty0}
+                    L${x1},${ty1} C${cx},${ty1} ${cx},${sy1} ${x0},${sy1} Z`)
+        .attr('fill', colorFn(lk.s))
+        .attr('fill-opacity', 0.22)
+        .attr('stroke', 'none')
+        .style('cursor','pointer')
+        .on('mousemove', ev => {
+          tip.style.opacity = 1;
+          tip.style.left = (ev.clientX + 14) + 'px';
+          tip.style.top  = (ev.clientY - 10) + 'px';
+          tip.innerHTML = `<strong>${lk.s}</strong><br>↓ ${lk.t}<br><span style="color:#9bbcde">${lk.v} dataset${lk.v>1?'s':''}</span>`;
+        })
+        .on('mouseleave', () => { tip.style.opacity = 0; })
+        .on('mouseover', function(){ d3.select(this).attr('fill-opacity', 0.5); })
+        .on('mouseout',  function(){ d3.select(this).attr('fill-opacity', 0.22); });
+    });
+  }
+
+  drawFlows(TM, tOut, mIn, tNodes, mNodes, s => TASK_C[s] || '#999');
+  drawFlows(MG, mOut, gIn, mNodes, gNodes, s => MOD_C[s] || '#999');
+
+  // ── Draw nodes ───────────────────────────────────────────────
+  [...tNodes, ...mNodes, ...gNodes].forEach(n => {
+    g.append('rect')
+      .attr('x', n.x0).attr('y', n.y0)
+      .attr('width', NODE_W).attr('height', Math.max(2, n.y1 - n.y0))
+      .attr('fill', n.color).attr('rx', 2).attr('opacity', 0.92);
+
+    // Value inside node if tall enough
+    if (n.y1 - n.y0 > 13) {
+      g.append('text')
+        .attr('x', n.x0 + NODE_W/2).attr('y', (n.y0+n.y1)/2)
+        .attr('dy','0.35em').attr('text-anchor','middle')
+        .attr('font-size', 8).attr('font-family','DM Mono,monospace')
+        .attr('fill','#fff').attr('pointer-events','none')
+        .text(n.v);
+    }
+
+    // Name labels
+    const isTask = n.x0 === xT, isGran = n.x0 === xG;
+    g.append('text')
+      .attr('x', isTask ? n.x0 - 6 : n.x1 + 6)
+      .attr('y', (n.y0+n.y1)/2)
+      .attr('dy','0.35em')
+      .attr('text-anchor', isTask ? 'end' : 'start')
+      .attr('font-size', 10).attr('fill','#222')
+      .attr('pointer-events','none')
+      .text(n.name);
+  });
+
+  // ── Column headers ───────────────────────────────────────────
+  [{x:xT, label:'NLP TASK', a:'start'},
+   {x:xM+NODE_W+6, label:'DATA MODALITY', a:'start'},
+   {x:xG+NODE_W, label:'GRANULARITY', a:'end'}]
+  .forEach(cl => {
+    g.append('text').attr('x', cl.x).attr('y', -12)
+      .attr('text-anchor', cl.a)
+      .attr('font-size', 9).attr('font-family','DM Mono,monospace')
+      .attr('letter-spacing', 1.5).attr('fill','#a89f96')
+      .text(cl.label);
+  });
+})();
+
+// ── FIG 10: FAIR Compliance Heatmap ───────────
+(function(){
+const FAIR_C={'Findable':'#2d5a8e','Accessible':'#c0392b','Interoperable':'#27664a','Reusable':'#6c3d7e'};
+const GROUPS={'Findable':['Persistent ID','Version','Repository URL','Short Name'],'Accessible':['Access Conditions','Access Mechanism','License','Ethics / IRB'],'Interoperable':['File Format','Ontology / Schema','Encoding','Reuse Code'],'Reusable':['Train/Test Split','IAA Score','Limitations','LLM Leakage']};
+const FIELDS=['Persistent ID','Version','Repository URL','Short Name','Access Conditions','Access Mechanism','License','Ethics / IRB','File Format','Ontology / Schema','Encoding','Reuse Code','Train/Test Split','IAA Score','Limitations','LLM Leakage'];
+const GN=Object.keys(GROUPS);
+const M=[
+{n:"RadGraph",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":1,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.984},
+{n:"MIMIC-III",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.938},
+{n:"eICU Collaborative",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.938},
+{n:"n2c2 2018 Cohort",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.75,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.922},
+{n:"RadQA",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0,"Train/Test Split":1,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.922},
+{n:"ODD (Opioid)",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.922},
+{n:"MS-CXR",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.922},
+{n:"CXRGraph",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.75,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":0.5},o:0.922},
+{n:"MIMIC-IV",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"RadGraph-XL",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.906},
+{n:"CADEC",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":1,"Train/Test Split":1,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"MIMIC-CXR",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":0.5,"LLM Leakage":1},o:0.906},
+{n:"BRAX",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"MedJ / MedJEx",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"SOAP Tasks 1&3",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"PIFIR",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.75,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"CHIFIR",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.75,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"BC5CDR",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.891},
+{n:"PMC-Patients",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.75,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.891},
+{n:"MedMentions",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":0.5},o:0.891},
+{n:"n2c2 2019 Concept",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.75,"Ethics / IRB":1,"File Format":0.5,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.875},
+{n:"MEDIQA 2021",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.875},
+{n:"Moody 2023",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.875},
+{n:"Med Expert Annot.",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.75,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.875},
+{n:"ArchEHR-QA",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.875},
+{n:"MedNLI",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.875},
+{n:"Biomed-Enriched",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":1,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.875},
+{n:"BioASQ",s:{"Persistent ID":0,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.859},
+{n:"CRAFT Corpus",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.859},
+{n:"EBM-NLP",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.859},
+{n:"Bridge2AI-Voice",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"MeDiSumQA",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"PADS",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"MTSamples",s:{"Persistent ID":0.5,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.859},
+{n:"Medication Extract.",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"SDoH MIMIC-III",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"Temporal Resp.",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"sense disambig.",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.859},
+{n:"MS-CXR-T",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"PubMedQA",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.844},
+{n:"ChemProt",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":0.5,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.844},
+{n:"MedSTS",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.844},
+{n:"CARMEN-I",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.844},
+{n:"ClinText-SP",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.844},
+{n:"Synthetic Mention",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.844},
+{n:"NCBI Disease",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.828},
+{n:"OpenMed NER",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.75,"File Format":0.5,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.828},
+{n:"EchoGraph",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0,"File Format":0,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":1,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.828},
+{n:"Semantic Sim.",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.812},
+{n:"Moody 2022",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":1,"IAA Score":0.5,"Limitations":0,"LLM Leakage":0.5},o:0.797},
+{n:"nlp-guild/medical",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.734},
+{n:"NLP-FBK/multilingual",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.734},
+{n:"NCATS-EpiSet4",s:{"Persistent ID":0.5,"Version":0,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":0.5,"LLM Leakage":0.5},o:0.719},
+{n:"bioBERT-ner",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":0.5,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.703},
+{n:"Sadaftb/clinical",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":0.5,"Ontology / Schema":0.5,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.688},
+{n:"NLP-FBK/wiki",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.688},
+{n:"MedicalNLPDataset",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.672},
+{n:"Medical_papers",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.5,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.656},
+{n:"clinical-entity",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":0.5,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.641},
+{n:"COVID-19 CORD-19",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0,"File Format":1,"Ontology / Schema":0,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0,"Limitations":0.5,"LLM Leakage":0.5},o:0.625}
+];
+
+function sc(v){if(v>=0.99)return'#1d6b3e';if(v>=0.74)return'#4caf75';if(v>=0.49)return'#f0c040';if(v>0.01)return'#e07b3a';return'#d44c2a';}
+
+const CELL_W=38,CELL_H=15,GRP_GAP=10,LEFT_W=140,SCORE_W=44;
+const HEADER_H=80,LABEL_AREA_H=78,TOP_H=HEADER_H+LABEL_AREA_H;
+
+const colX=[];let cxp=0;
+GN.forEach((g,gi)=>{GROUPS[g].forEach(()=>{colX.push(cxp);cxp+=CELL_W;});if(gi<GN.length-1)cxp+=GRP_GAP;});
+const COLS_W=cxp;
+const W=LEFT_W+COLS_W+SCORE_W+20,H=TOP_H+M.length*CELL_H;
+
+const svg=d3.select('#hmap').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width',W).style('display','block').style('max-width','100%');
+const tip=document.getElementById('fair-tip');
+
+const bgG=svg.append('g').attr('class','hbg');bgG.lower();
+const labelG=svg.append('g').attr('class','hlabels');
+
+// Group bars
+const GRP_Y=6,GRP_H=20;let gx=LEFT_W;
+GN.forEach((g,gi)=>{
+  const gw=GROUPS[g].length*CELL_W;
+  svg.append('rect').attr('x',gx).attr('y',GRP_Y).attr('width',gw-2).attr('height',GRP_H).attr('fill',FAIR_C[g]).attr('rx',2).attr('opacity',0.92);
+  svg.append('text').attr('x',gx+gw/2).attr('y',GRP_Y+GRP_H/2+1).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('font-size',9.5).attr('fill','#fff').attr('font-family','DM Mono,monospace').attr('letter-spacing',1).text(g.toUpperCase());
+  gx+=gw+(gi<GN.length-1?GRP_GAP:0);
+});
+
+// Score header
+svg.append('text').attr('x',LEFT_W+COLS_W+GRP_GAP+SCORE_W/2).attr('y',TOP_H-8).attr('text-anchor','middle').attr('font-size',8).attr('fill','#aaa').attr('font-family','DM Mono,monospace').text('SCORE');
+
+// Grid
+const gridG=svg.append('g').attr('transform',`translate(${LEFT_W},${TOP_H})`);
+M.forEach((ds,ri)=>{
+  const ry=ri*CELL_H;
+  if(ri%2===0)bgG.append('rect').attr('x',0).attr('y',TOP_H+ry).attr('width',W).attr('height',CELL_H).attr('fill','#faf8f4').style('pointer-events','none');
+  svg.append('text').attr('x',LEFT_W-5).attr('y',TOP_H+ry+CELL_H/2).attr('text-anchor','end').attr('dominant-baseline','middle').attr('font-size',9).attr('fill','#333').text(ds.n);
+  FIELDS.forEach((f,fi)=>{
+    const score=ds.s[f];
+    gridG.append('rect').attr('x',colX[fi]+1).attr('y',ry+1).attr('width',CELL_W-2).attr('height',CELL_H-2).attr('fill',sc(score)).attr('rx',1).attr('opacity',0.88).style('cursor','pointer')
+      .on('mousemove',ev=>{
+        tip.style.opacity=1;tip.style.left=(ev.clientX+14)+'px';tip.style.top=(ev.clientY-10)+'px';
+        const gr=GN.find(g=>GROUPS[g].includes(f));
+        tip.innerHTML=`<strong>${ds.n}</strong><br>${f}<br>${score>=1?'✓ Complete':score===0?'✗ Missing':'⚠ Partial ('+score+')'}<br><span style="color:#9bbcde;font-size:10px">${gr}</span>`;
+      }).on('mouseleave',()=>{tip.style.opacity=0;});
+  });
+  const bx=COLS_W+GRP_GAP,bw=SCORE_W-10;
+  gridG.append('rect').attr('x',bx).attr('y',ry+2).attr('width',bw).attr('height',CELL_H-4).attr('fill','#e8e4de').attr('rx',1);
+  gridG.append('rect').attr('x',bx).attr('y',ry+2).attr('width',bw*ds.o).attr('height',CELL_H-4).attr('fill',sc(ds.o)).attr('rx',1).attr('opacity',0.9);
+  gridG.append('text').attr('x',bx+bw+3).attr('y',ry+CELL_H/2).attr('dominant-baseline','middle').attr('font-size',8).attr('fill','#666').attr('font-family','DM Mono,monospace').text((ds.o*100).toFixed(0));
+});
+
+// Column labels — drawn last, raised above grid
+FIELDS.forEach((f,fi)=>{
+  labelG.append('text')
+    .attr('transform',`translate(${LEFT_W+colX[fi]+CELL_W/2},${TOP_H}) rotate(-55)`)
+    .attr('text-anchor','start').attr('dominant-baseline','auto')
+    .attr('font-size',9.5).attr('fill','#333').text(f);
+});
+labelG.raise();
+
+// Separator lines
+let sx=LEFT_W;
+GN.forEach((g,gi)=>{
+  sx+=GROUPS[g].length*CELL_W;
+  if(gi<GN.length-1){
+    svg.append('line').attr('x1',sx+GRP_GAP/2).attr('x2',sx+GRP_GAP/2).attr('y1',GRP_Y).attr('y2',H).attr('stroke','#d4cfc8').attr('stroke-width',1);
+    sx+=GRP_GAP;
+  }
+});
+})();
+
+</script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f2ec;
+    --ink: #1a1714;
+    --muted: #6b6560;
+    --rule: #d4cfc8;
+    --panel: #fff;
+    --c1: #2d5a8e;
+    --c2: #c0392b;
+    --c3: #27664a;
+    --c4: #8b5e3c;
+    --c5: #6c3d7e;
+    --c6: #b5860d;
+    --c7: #1a7a7a;
+    --c8: #c45c2a;
+    --c9: #4a5568;
+    --c10: #2d4a22;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--ink); }
+
+  header {
+    background: var(--ink); color: var(--bg);
+    padding: 48px 64px 40px;
+    border-bottom: 3px solid var(--c1);
+  }
+  .header-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #a89f96; margin-bottom: 12px; }
+  header h1 { font-family: 'DM Serif Display', serif; font-size: 36px; line-height: 1.15; margin-bottom: 10px; }
+  header h1 em { color: #9bbcde; font-style: italic; }
+  .header-meta { display: flex; gap: 32px; margin-top: 20px; }
+  .stat-pill { display: flex; flex-direction: column; gap: 2px; }
+  .stat-pill .num { font-family: 'DM Serif Display', serif; font-size: 28px; color: #fff; }
+  .stat-pill .lbl { font-size: 11px; color: #a89f96; letter-spacing: 1px; text-transform: uppercase; }
+  .divider { width: 1px; background: #3a3530; margin: 0 8px; }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 48px 32px 80px; }
+
+  .section-header { margin-bottom: 10px; }
+  .section-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .section-title { font-family: 'DM Serif Display', serif; font-size: 18px; color: var(--ink); }
+
+  .part-divider {
+    display: flex; align-items: center; gap: 16px;
+    margin: 48px 0 28px;
+  }
+  .part-divider .part-label {
+    font-family: 'DM Serif Display', serif; font-size: 22px; white-space: nowrap; color: var(--ink);
+  }
+  .part-divider .part-line { flex: 1; height: 1px; background: var(--rule); }
+  .part-divider .part-num { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; white-space: nowrap; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  .grid-full { margin-bottom: 24px; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--rule); border-radius: 2px;
+    padding: 28px 28px 22px; position: relative; overflow: hidden;
+  }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--c1); }
+  .card.c2::before { background: var(--c2); }
+  .card.c3::before { background: var(--c3); }
+  .card.c4::before { background: var(--c4); }
+  .card.c5::before { background: var(--c5); }
+  .card.c6::before { background: var(--c6); }
+  .card.c7::before { background: var(--c7); }
+  .card.c8::before { background: var(--c8); }
+
+  .card-title { font-family: 'DM Serif Display', serif; font-size: 16px; margin-bottom: 3px; }
+  .card-desc { font-size: 12px; color: var(--muted); margin-bottom: 22px; line-height: 1.5; }
+  svg text { font-family: 'DM Sans', sans-serif; }
+  .chart-area { width: 100%; overflow: hidden; }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink); }
+  .legend-swatch { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-swatch.sq { border-radius: 2px; }
+
+  .footnote { text-align: center; font-size: 11px; color: var(--muted); margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--rule); font-family: 'DM Mono', monospace; letter-spacing: 0.5px; }
+
+  .fair-tip {
+    position: fixed; background: #1a1714; color: #f5f2ec;
+    padding: 10px 14px; border-radius: 3px; font-size: 12px;
+    pointer-events: none; opacity: 0; transition: opacity .15s;
+    z-index: 100; max-width: 260px; line-height: 1.6;
+  }
+  .fair-tip strong { font-family: 'DM Mono', monospace; font-size: 11px; color: #9bbcde; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">AMIA NLP Working Group · Dataset Standardization Initiative</div>
+  <h1>Clinical &amp; Biomedical NLP Datasets<br><em>Landscape Overview</em></h1>
+  <div class="header-meta">
+    <div class="stat-pill"><span class="num">60</span><span class="lbl">Datasets Catalogued</span></div>
+    <div class="divider"></div>
+    <div class="stat-pill"><span class="num">33</span><span class="lbl">Metadata Fields</span></div>
+    <div class="divider"></div>
+    <div class="stat-pill"><span class="num">10</span><span class="lbl">Domain Categories</span></div>
+    <div class="divider"></div>
+    <div class="stat-pill"><span class="num">2011–2025</span><span class="lbl">Publication Span</span></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- PART I -->
+  <div class="part-divider">
+    <span class="part-num">PART I</span>
+    <div class="part-line"></div>
+    <span class="part-label">Corpus Landscape</span>
+    <div class="part-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="section-label">Fig. 1 · Domain</div>
+      <div class="card-title">Dataset Domain Categories</div>
+      <div class="card-desc">Classified from free-text domain field (n = 60)</div>
+      <div class="chart-area" id="domain-chart"></div>
+    </div>
+    <div class="card c3">
+      <div class="section-label">Fig. 2 · Access</div>
+      <div class="card-title">Access &amp; Use Conditions</div>
+      <div class="card-desc">Proportion by access tier (n = 60)</div>
+      <div class="chart-area" id="access-chart"></div>
+      <div class="legend" id="access-legend"></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card c5">
+      <div class="section-label">Fig. 3 · Repository</div>
+      <div class="card-title">Hosting Repository Distribution</div>
+      <div class="card-desc">Where datasets are hosted or mirrored (n = 60)</div>
+      <div class="chart-area" id="repo-chart"></div>
+    </div>
+    <div class="card c6">
+      <div class="section-label">Fig. 4 · Timeline</div>
+      <div class="card-title">Dataset Release / Last Update by Year</div>
+      <div class="card-desc">Notable growth post-2022; 2025 reflects active curation</div>
+      <div class="chart-area" id="timeline-chart"></div>
+    </div>
+  </div>
+
+  <!-- PART II -->
+  <div class="part-divider">
+    <span class="part-num">PART II</span>
+    <div class="part-line"></div>
+    <span class="part-label">Task &amp; Modality Structure</span>
+    <div class="part-line"></div>
+  </div>
+
+  <div class="grid-full">
+    <div class="card c2">
+      <div class="section-label">Fig. 5 · Task × Modality</div>
+      <div class="card-title">Task Composition within Each Data Modality</div>
+      <div class="card-desc">100% stacked bar showing primary task breakdown per data modality. Radiology skews toward NER + RE; EHR text covers the broadest task range.</div>
+      <div class="chart-area" id="stacked-modality-chart"></div>
+      <div class="legend" id="stacked-legend"></div>
+    </div>
+  </div>
+
+  <div class="grid-full">
+    <div class="card c7">
+      <div class="section-label">Fig. 6 · NLP Tasks</div>
+      <div class="card-title">Primary NLP Task Distribution</div>
+      <div class="card-desc">Task type extracted from annotation field; multi-task datasets classified as "Multi-task / Other" (n = 60)</div>
+      <div class="chart-area" id="task-chart"></div>
+    </div>
+  </div>
+
+  <!-- PART III -->
+  <div class="part-divider">
+    <span class="part-num">PART III</span>
+    <div class="part-line"></div>
+    <span class="part-label">Language &amp; Coverage</span>
+    <div class="part-line"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card c4">
+      <div class="section-label">Fig. 7 · Language</div>
+      <div class="card-title">Language Coverage</div>
+      <div class="card-desc">English dominates; only 8 datasets include non-English text, exposing a multilingual gap in clinical NLP (n = 60)</div>
+      <div class="chart-area" id="lang-chart"></div>
+    </div>
+    <div class="card c8">
+      <div class="section-label">Fig. 8 · LLM Leakage</div>
+      <div class="card-title">LLM Training Data Leakage Risk</div>
+      <div class="card-desc">Classification based on known or suspected use in LLM pre-training corpora; affects benchmark validity (n = 60)</div>
+      <div class="chart-area" id="leakage-chart"></div>
+      <div class="legend" id="leakage-legend"></div>
+    </div>
+  </div>
+
+
+
+  <!-- PART III cont. — Sankey -->
+  <div class="part-divider">
+    <span class="part-num">PART III</span>
+    <div class="part-line"></div>
+    <span class="part-label">Task · Modality · Granularity Flow</span>
+    <div class="part-line"></div>
+  </div>
+
+  <div class="grid-full">
+    <div class="card c5">
+      <div class="section-label">Fig. 9 · Sankey</div>
+      <div class="card-title">Task → Modality → Annotation Granularity</div>
+      <div class="card-desc">Flow diagram showing how dataset NLP tasks (left) map to data modalities (center) and annotation granularity levels (right). Width of each band is proportional to number of datasets (n = 60).</div>
+      <div id="sankey-chart" style="width:100%;overflow:hidden"></div>
+    </div>
+  </div>
+
+  <!-- PART IV -->
+  <div class="part-divider">
+    <span class="part-num">PART IV</span>
+    <div class="part-line"></div>
+    <span class="part-label">FAIR Metadata Compliance</span>
+    <div class="part-line"></div>
+  </div>
+
+  <div class="grid-full">
+    <div class="card" style="position:relative" id="fair-card"><div style="position:absolute;top:0;left:0;right:0;height:3px;background:#6c3d7e;z-index:1"></div>
+      <div class="section-label">Fig. 10 · FAIR Heatmap</div>
+      <div class="card-title">Dataset × Metadata Field Compliance Matrix</div>
+      <div class="card-desc">60 datasets (rows, sorted by overall FAIR score ↓) × 16 metadata fields (columns, grouped by FAIR principle). Each cell = heuristic quality score (0–1): full credit for quantified or standardized values, partial for vague entries, zero for missing. Hover for details.</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:16px">
+        <div style="width:18px;height:12px;border-radius:2px;background:#1d6b3e;flex-shrink:0"></div><span style="font-size:11px;color:#6b6560;margin-right:10px">Complete (1.0)</span>
+        <div style="width:18px;height:12px;border-radius:2px;background:#4caf75;flex-shrink:0"></div><span style="font-size:11px;color:#6b6560;margin-right:10px">Good (0.75)</span>
+        <div style="width:18px;height:12px;border-radius:2px;background:#f0c040;flex-shrink:0"></div><span style="font-size:11px;color:#6b6560;margin-right:10px">Partial (0.5)</span>
+        <div style="width:18px;height:12px;border-radius:2px;background:#e07b3a;flex-shrink:0"></div><span style="font-size:11px;color:#6b6560;margin-right:10px">Weak (0.25)</span>
+        <div style="width:18px;height:12px;border-radius:2px;background:#d44c2a;flex-shrink:0"></div><span style="font-size:11px;color:#6b6560">Missing (0)</span>
+      </div>
+      <div id="hmap" style="overflow-x:auto"></div>
+    </div>
+  </div>
+
+</main>
+
+<div class="footnote">
+  AMIA NLP Working Group · Clinical &amp; Biomedical NLP Dataset Catalog · FAIR-Aligned Metadata Framework · 2025
+</div>
+
+<script>
+const PALETTE = ['#2d5a8e','#c0392b','#27664a','#8b5e3c','#6c3d7e','#b5860d','#1a7a7a','#c45c2a','#4a5568','#2d4a22','#7b3f6e'];
+
+// ── HELPERS ──────────────────────────────────
+function hbar(containerId, data, {accent='#2d5a8e', xMax, labelW=180, h=32, pad=0.3, showPct=false, total=60} = {}) {
+  const W = 460, rows = data.length;
+  const margin = {top:6, right:56, bottom:10, left:labelW};
+  const w = W - margin.left - margin.right;
+  const H = rows * h + margin.top + margin.bottom + 10;
+
+  const svg = d3.select(`#${containerId}`).append('svg')
+    .attr('viewBox', `0 0 ${W} ${H}`).attr('width','100%');
+  const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+  const ht = H - margin.top - margin.bottom;
+
+  const x = d3.scaleLinear().domain([0, xMax || d3.max(data, d=>d.value)*1.15]).range([0, w]);
+  const y = d3.scaleBand().domain(data.map(d=>d.label)).range([0, ht]).padding(pad);
+
+  // grid
+  [Math.round(xMax*0.25), Math.round(xMax*0.5), Math.round(xMax*0.75), xMax].forEach(v => {
+    if(!v) return;
+    g.append('line').attr('x1',x(v)).attr('x2',x(v)).attr('y1',0).attr('y2',ht)
+      .attr('stroke','#e8e4de').attr('stroke-dasharray','2,3');
+  });
+
+  const grp = g.selectAll('g.bg').data(data).join('g');
+  grp.append('rect').attr('x',0).attr('y',d=>y(d.label))
+    .attr('width',d=>x(d.value)).attr('height',y.bandwidth())
+    .attr('fill', (d,i) => d.color || (Array.isArray(accent) ? accent[i] : accent)).attr('rx',1);
+
+  grp.append('text').attr('x',-8).attr('y',d=>y(d.label)+y.bandwidth()/2)
+    .attr('dy','0.35em').attr('text-anchor','end').attr('font-size',11.5).attr('fill','#1a1714')
+    .text(d=>d.label);
+
+  grp.append('text').attr('x',d=>x(d.value)+5).attr('y',d=>y(d.label)+y.bandwidth()/2)
+    .attr('dy','0.35em').attr('font-size',11).attr('fill','#888').attr('font-family','DM Mono, monospace')
+    .text(d => showPct ? `${d.value} (${Math.round(d.value/total*100)}%)` : d.value);
+}
+
+// ── FIG 1: Domain ────────────────────────────
+hbar('domain-chart', [
+  {label:'Clinical NLP',             value:12},
+  {label:'Radiology / Imaging',      value:9},
+  {label:'Biomedical Literature',    value:8},
+  {label:'General Medicine',         value:8},
+  {label:'ICU / Critical Care',      value:6},
+  {label:'Mixed / Other',            value:11},
+  {label:'Pharmacology / Drug',      value:2},
+  {label:'Cardiology / Neurology',   value:2},
+  {label:'Mental Health / Speech',   value:1},
+  {label:'Oncology / Pathology',     value:1},
+].sort((a,b)=>b.value-a.value), {accent:PALETTE, xMax:14, labelW:175, h:31, showPct:true});
+
+// ── FIG 2: Access Donut ──────────────────────
+(function(){
+  const data = [
+    {label:'Credentialed / Restricted', value:29, color:'#c0392b'},
+    {label:'Fully Open',                value:20, color:'#27664a'},
+    {label:'Free (Registration)',       value:6,  color:'#2d5a8e'},
+    {label:'DUA Required',             value:4,  color:'#b5860d'},
+    {label:'Private',                  value:1,  color:'#6b6560'},
+  ];
+  const W=300, H=210, r=Math.min(W,H)/2-12;
+  const svg = d3.select('#access-chart').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+  const g = svg.append('g').attr('transform',`translate(${W/2},${H/2})`);
+  const pie = d3.pie().value(d=>d.value).sort(null).padAngle(0.025);
+  const arc = d3.arc().innerRadius(r*.56).outerRadius(r);
+  g.selectAll('path').data(pie(data)).join('path').attr('d',arc)
+    .attr('fill',d=>d.data.color).attr('stroke','#f5f2ec').attr('stroke-width',2.5);
+  g.append('text').attr('text-anchor','middle').attr('dy','-0.15em')
+    .attr('font-family','DM Serif Display, serif').attr('font-size',26).attr('fill','#1a1714').text('60');
+  g.append('text').attr('text-anchor','middle').attr('dy','1.2em')
+    .attr('font-size',9).attr('fill','#6b6560').attr('font-family','DM Mono, monospace').attr('letter-spacing',1).text('DATASETS');
+  const leg = d3.select('#access-legend');
+  data.forEach(d=>{
+    const it = leg.append('div').attr('class','legend-item');
+    it.append('div').attr('class','legend-swatch').style('background',d.color);
+    it.append('span').text(`${d.label} (${d.value})`);
+  });
+})();
+
+// ── FIG 3: Repository ────────────────────────
+hbar('repo-chart', [
+  {label:'PhysioNet',       value:28, color:'#2d5a8e'},
+  {label:'Hugging Face',    value:15, color:'#c45c2a'},
+  {label:'GitHub',          value:11, color:'#27664a'},
+  {label:'n2c2 / i2b2',    value:3,  color:'#6c3d7e'},
+  {label:'NCBI / PubMed',  value:1,  color:'#b5860d'},
+  {label:'Other / Direct',  value:2,  color:'#6b6560'},
+], {xMax:32, labelW:140, h:33, showPct:true});
+
+// ── FIG 4: Timeline ──────────────────────────
+(function(){
+  const data = [
+    {year:2011,count:2},{year:2012,count:1},{year:2013,count:0},
+    {year:2014,count:1},{year:2015,count:1},{year:2016,count:2},
+    {year:2017,count:2},{year:2018,count:3},{year:2019,count:5},
+    {year:2020,count:0},{year:2021,count:2},{year:2022,count:5},
+    {year:2023,count:4},{year:2024,count:10},{year:2025,count:14},
+  ];
+  const W=460, H=190, margin={top:16,right:20,bottom:34,left:38};
+  const w=W-margin.left-margin.right, h=H-margin.top-margin.bottom;
+  const svg=d3.select('#timeline-chart').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+  const g=svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
+  const x=d3.scaleBand().domain(data.map(d=>d.year)).range([0,w]).padding(0.28);
+  const y=d3.scaleLinear().domain([0,16]).range([h,0]);
+  [4,8,12,16].forEach(v=>{
+    g.append('line').attr('x1',0).attr('x2',w).attr('y1',y(v)).attr('y2',y(v))
+      .attr('stroke','#e8e4de').attr('stroke-dasharray','2,3');
+    g.append('text').attr('x',-5).attr('y',y(v)).attr('dy','0.35em')
+      .attr('text-anchor','end').attr('font-size',9).attr('fill','#aaa').text(v);
+  });
+  g.selectAll('rect').data(data).join('rect')
+    .attr('x',d=>x(d.year)).attr('y',d=>y(d.count))
+    .attr('width',x.bandwidth()).attr('height',d=>h-y(d.count))
+    .attr('fill',d=>d.year>=2022?'#2d5a8e':'#9bbcde').attr('rx',1);
+  g.selectAll('.cnt').data(data).join('text').attr('class','cnt')
+    .attr('x',d=>x(d.year)+x.bandwidth()/2).attr('y',d=>y(d.count)-3)
+    .attr('text-anchor','middle').attr('font-size',9).attr('fill','#555')
+    .attr('font-family','DM Mono, monospace').text(d=>d.count>0?d.count:'');
+  g.append('g').attr('transform',`translate(0,${h})`).call(
+    d3.axisBottom(x).tickSize(0).tickPadding(6)
+  ).call(g=>{
+    g.select('.domain').attr('stroke','#d4cfc8');
+    g.selectAll('text').attr('font-size',9.5).attr('fill','#6b6560');
+  });
+  g.append('line').attr('x1',x(2022)-3).attr('x2',x(2022)-3).attr('y1',0).attr('y2',h)
+    .attr('stroke','#c0392b').attr('stroke-dasharray','4,3').attr('stroke-width',1.2);
+  g.append('text').attr('x',x(2022)-6).attr('y',6).attr('text-anchor','end')
+    .attr('font-size',9).attr('fill','#c0392b').attr('font-family','DM Mono, monospace').text('surge →');
+})();
+
+// ── FIG 5: Stacked 100% Task × Modality ─────
+(function(){
+  const taskColors = {
+    'Multi-task / Other':           '#9bbcde',
+    'Named Entity Recognition':     '#2d5a8e',
+    'NER + Relation Extraction':    '#1a7a7a',
+    'Classification':               '#b5860d',
+    'Question Answering':           '#c0392b',
+    'Concept Normalization':        '#27664a',
+    'Semantic Similarity':          '#6c3d7e',
+    'De-identification':            '#8b5e3c',
+    'Temporal Extraction':          '#c45c2a',
+    'NLI / Inference':              '#4a5568',
+    'Pre-training Corpus':          '#aaa',
+  };
+
+  const raw = [
+    {modality:'EHR / Clinical Text', n:17, tasks:{'Classification':5,'Named Entity Recognition':4,'Multi-task / Other':3,'Question Answering':1,'Concept Normalization':1,'Temporal Extraction':1,'NLI / Inference':1,'Semantic Similarity':1}},
+    {modality:'Biomedical Literature', n:15, tasks:{'Multi-task / Other':5,'Named Entity Recognition':4,'Question Answering':3,'NER + Relation Extraction':1,'Classification':1,'Concept Normalization':1}},
+    {modality:'Radiology / Imaging', n:14, tasks:{'NER + Relation Extraction':5,'Multi-task / Other':3,'Classification':3,'De-identification':1,'Question Answering':1,'Named Entity Recognition':1}},
+    {modality:'Sensor / Signal', n:4, tasks:{'Multi-task / Other':3,'Classification':1}},
+    {modality:'Mixed / Other', n:6, tasks:{'Named Entity Recognition':2,'Multi-task / Other':1,'NER + Relation Extraction':1,'Question Answering':1,'Semantic Similarity':1}},
+    {modality:'Synthetic / Knowledge', n:3, tasks:{'Multi-task / Other':2,'Pre-training Corpus':1}},
+    {modality:'Patient-generated', n:1, tasks:{'Named Entity Recognition':1}},
+  ].sort((a,b)=>b.n-a.n);
+
+  const allTasks = Object.keys(taskColors);
+  const W=860, H=310, margin={top:28,right:220,bottom:80,left:10};
+  const w=W-margin.left-margin.right, h=H-margin.top-margin.bottom;
+  const svg=d3.select('#stacked-modality-chart').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+  const g=svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
+
+  const x=d3.scaleBand().domain(raw.map(d=>d.modality)).range([0,w]).padding(0.2);
+  const y=d3.scaleLinear().domain([0,1]).range([h,0]);
+
+  // Y axis
+  [0,.25,.5,.75,1].forEach(v=>{
+    g.append('line').attr('x1',0).attr('x2',w).attr('y1',y(v)).attr('y2',y(v))
+      .attr('stroke','#e8e4de').attr('stroke-dasharray', v===0?'':'2,3').attr('stroke-width', v===0?1:1);
+    g.append('text').attr('x',-5).attr('y',y(v)).attr('dy','0.35em')
+      .attr('text-anchor','end').attr('font-size',10).attr('fill','#aaa').text(`${v*100}%`);
+  });
+
+  raw.forEach(row => {
+    const total = row.n;
+    let cumulative = 0;
+    const usedTasks = allTasks.filter(t => row.tasks[t]);
+    usedTasks.forEach(task => {
+      const val = (row.tasks[task] || 0) / total;
+      g.append('rect')
+        .attr('x', x(row.modality))
+        .attr('y', y(cumulative + val))
+        .attr('width', x.bandwidth())
+        .attr('height', Math.abs(y(val) - y(0)))
+        .attr('fill', taskColors[task])
+        .attr('stroke', '#fff').attr('stroke-width', 0.8);
+      cumulative += val;
+    });
+    // n= label on top
+    g.append('text').attr('x', x(row.modality)+x.bandwidth()/2).attr('y', -6)
+      .attr('text-anchor','middle').attr('font-size',10.5).attr('fill','#555').attr('font-family','DM Mono, monospace')
+      .text(`n=${row.n}`);
+  });
+
+  // X Axis
+  g.append('g').attr('transform',`translate(0,${h})`).call(
+    d3.axisBottom(x).tickSize(0).tickPadding(8)
+  ).call(ax=>{
+    ax.select('.domain').attr('stroke','#d4cfc8');
+    ax.selectAll('text').attr('font-size',11).attr('fill','#444')
+      .attr('text-anchor','end').attr('transform','rotate(-28)');
+  });
+
+  // X axis label
+  g.append('text').attr('x',w/2).attr('y',h+68).attr('text-anchor','middle')
+    .attr('font-size',11.5).attr('fill','#6b6560').text('Data Modality');
+
+  // Legend (right side)
+  const leg = svg.append('g').attr('transform',`translate(${W-210},${margin.top})`);
+  leg.append('text').attr('font-size',10.5).attr('fill','#6b6560').attr('font-family','DM Mono, monospace')
+    .attr('letter-spacing',1).text('PRIMARY TASK');
+  const usedColors = allTasks.filter(t => raw.some(r=>r.tasks[t]));
+  usedColors.forEach((task,i)=>{
+    const row = leg.append('g').attr('transform',`translate(0,${18+i*18})`);
+    row.append('rect').attr('width',10).attr('height',10).attr('y',-1).attr('rx',1).attr('fill',taskColors[task]);
+    row.append('text').attr('x',15).attr('dy','0.6em').attr('font-size',10.5).attr('fill','#333').text(task);
+  });
+})();
+
+// ── FIG 6: NLP Task Horizontal Bar ───────────
+hbar('task-chart', [
+  {label:'Multi-task / Other',            value:17},
+  {label:'Named Entity Recognition',      value:12},
+  {label:'Classification',                value:10},
+  {label:'NER + Relation Extraction',     value:7},
+  {label:'Question Answering',            value:6},
+  {label:'Concept Normalization / Linking',value:2},
+  {label:'Semantic Similarity',           value:2},
+  {label:'De-identification',             value:1},
+  {label:'Temporal Extraction',           value:1},
+  {label:'NLI / Inference',              value:1},
+  {label:'Pre-training Corpus',           value:1},
+].sort((a,b)=>b.value-a.value),
+{accent:PALETTE, xMax:20, labelW:230, h:33, showPct:true});
+
+// ── FIG 7: Language ──────────────────────────
+(function(){
+  const data = [
+    {label:'English only',           value:52, color:'#2d5a8e'},
+    {label:'English + Spanish',      value:3,  color:'#c0392b'},
+    {label:'English + Portuguese',   value:1,  color:'#27664a'},
+    {label:'English + German',       value:1,  color:'#b5860d'},
+    {label:'Italian/EN/ES',          value:1,  color:'#6c3d7e'},
+    {label:'Chinese',                value:1,  color:'#1a7a7a'},
+    {label:'Undocumented',           value:1,  color:'#aaa'},
+  ];
+  const W=360, H=260, margin={top:10,right:20,bottom:10,left:160};
+  const w=W-margin.left-margin.right, h=H-margin.top-margin.bottom;
+  const svg=d3.select('#lang-chart').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+  const g=svg.append('g').attr('transform',`translate(${margin.left},${margin.top})`);
+  const y=d3.scaleBand().domain(data.map(d=>d.label)).range([0,h]).padding(0.3);
+  const x=d3.scaleLinear().domain([0,60]).range([0,w]);
+  [15,30,45,60].forEach(v=>{
+    g.append('line').attr('x1',x(v)).attr('x2',x(v)).attr('y1',0).attr('y2',h)
+      .attr('stroke','#e8e4de').attr('stroke-dasharray','2,3');
+  });
+  const grp=g.selectAll('g').data(data).join('g');
+  grp.append('rect').attr('x',0).attr('y',d=>y(d.label))
+    .attr('width',d=>x(d.value)).attr('height',y.bandwidth())
+    .attr('fill',d=>d.color).attr('rx',1);
+  grp.append('text').attr('x',-8).attr('y',d=>y(d.label)+y.bandwidth()/2)
+    .attr('dy','0.35em').attr('text-anchor','end').attr('font-size',11).attr('fill','#1a1714')
+    .text(d=>d.label);
+  grp.append('text').attr('x',d=>x(d.value)+5).attr('y',d=>y(d.label)+y.bandwidth()/2)
+    .attr('dy','0.35em').attr('font-size',11).attr('fill','#888').attr('font-family','DM Mono, monospace')
+    .text(d=>`${d.value} (${Math.round(d.value/60*100)}%)`);
+})();
+
+// ── FIG 8: LLM Leakage Risk ──────────────────
+(function(){
+  const data = [
+    {label:'Potential leakage\n(widely cited)',  value:28, color:'#c0392b'},
+    {label:'Unknown / unconfirmed',             value:22, color:'#b5860d'},
+    {label:'Low risk\n(restricted access)',      value:8,  color:'#27664a'},
+    {label:'Confirmed not used',                value:2,  color:'#4a5568'},
+  ];
+  const W=340, H=240, r=Math.min(W,H)/2-16;
+  const svg=d3.select('#leakage-chart').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width','100%');
+  const g=svg.append('g').attr('transform',`translate(${W/2},${H/2})`);
+  const pie=d3.pie().value(d=>d.value).sort(null).padAngle(0.03);
+  const arc=d3.arc().innerRadius(r*.0).outerRadius(r);
+  const arcHover=d3.arc().innerRadius(r*.0).outerRadius(r+6);
+
+  const paths = g.selectAll('path').data(pie(data)).join('path')
+    .attr('d',arc).attr('fill',d=>d.data.color)
+    .attr('stroke','#f5f2ec').attr('stroke-width',2.5);
+
+  // Labels on slices
+  const labelArc=d3.arc().innerRadius(r*.55).outerRadius(r*.55);
+  g.selectAll('text.slice-label').data(pie(data)).join('text').attr('class','slice-label')
+    .attr('transform',d=>`translate(${labelArc.centroid(d)})`)
+    .attr('text-anchor','middle').attr('font-size',11).attr('fill','#fff').attr('font-weight','600')
+    .text(d=>d.data.value>3 ? d.data.value : '');
+
+  const leg=d3.select('#leakage-legend');
+  data.forEach(d=>{
+    const it=leg.append('div').attr('class','legend-item');
+    it.append('div').attr('class','legend-swatch sq').style('background',d.color);
+    it.append('span').text(`${d.label.replace('\n',' ')} (${d.value})`);
+  });
+})();
+
+
+
+
+// ── FIG 9: Sankey — Task → Modality → Granularity (pure D3, no plugin) ───
+(function(){
+  const TASK_C = {
+    'Multiple Tasks':       '#4a5568',
+    'NER':                  '#2d5a8e',
+    'QA':                   '#6c3d7e',
+    'Classification':       '#c0392b',
+    'Entity Normalization': '#27664a',
+    'De-ID':                '#8b5e3c',
+    'Temporal / Event':     '#c45c2a',
+    'NLI':                  '#1a7a7a',
+  };
+  const MOD_C = {
+    'EHR / Clinical Text':         '#2d5a8e',
+    'Biomedical Literature':       '#8b5e3c',
+    'Radiology / Imaging':         '#27664a',
+    'Patient-gen / Sensors':       '#1a7a7a',
+    'Mixed / Other':               '#4a5568',
+  };
+  const GRAN_C = {
+    'Multiple levels':    '#6c3d7e',
+    'Token / Span-level': '#2d5a8e',
+    'Document-level':     '#c0392b',
+    'Sentence-level':     '#b5860d',
+    'Patient-level':      '#27664a',
+  };
+
+  // ── Data ────────────────────────────────────────────────────
+  const TASKS = [
+    {name:'Multiple Tasks', v:35},
+    {name:'NER', v:6},
+    {name:'QA', v:6},
+    {name:'Entity Normalization', v:4},
+    {name:'Classification', v:4},
+    {name:'De-ID', v:3},
+    {name:'Temporal / Event', v:1},
+    {name:'NLI', v:1},
+  ];
+  const MODS = [
+    {name:'EHR / Clinical Text', v:23},
+    {name:'Biomedical Literature', v:17},
+    {name:'Radiology / Imaging', v:14},
+    {name:'Patient-gen / Sensors', v:3},
+    {name:'Mixed / Other', v:3},
+  ];
+  const GRANS = [
+    {name:'Multiple levels', v:32},
+    {name:'Token / Span-level', v:14},
+    {name:'Document-level', v:9},
+    {name:'Sentence-level', v:5},
+  ];
+
+  const TM = [
+    {s:'Multiple Tasks', t:'EHR / Clinical Text', v:12},
+    {s:'Multiple Tasks', t:'Radiology / Imaging', v:9},
+    {s:'Multiple Tasks', t:'Biomedical Literature', v:9},
+    {s:'Multiple Tasks', t:'Patient-gen / Sensors', v:3},
+    {s:'Multiple Tasks', t:'Mixed / Other', v:2},
+    {s:'QA', t:'Biomedical Literature', v:3},
+    {s:'QA', t:'EHR / Clinical Text', v:2},
+    {s:'QA', t:'Radiology / Imaging', v:1},
+    {s:'NER', t:'Biomedical Literature', v:3},
+    {s:'NER', t:'EHR / Clinical Text', v:2},
+    {s:'NER', t:'Radiology / Imaging', v:1},
+    {s:'Classification', t:'EHR / Clinical Text', v:3},
+    {s:'Classification', t:'Biomedical Literature', v:1},
+    {s:'Entity Normalization', t:'EHR / Clinical Text', v:1},
+    {s:'Entity Normalization', t:'Biomedical Literature', v:1},
+    {s:'Entity Normalization', t:'Mixed / Other', v:1},
+    {s:'Entity Normalization', t:'Radiology / Imaging', v:1},
+    {s:'De-ID', t:'Radiology / Imaging', v:2},
+    {s:'De-ID', t:'EHR / Clinical Text', v:1},
+    {s:'Temporal / Event', t:'EHR / Clinical Text', v:1},
+    {s:'NLI', t:'EHR / Clinical Text', v:1},
+  ];
+  const MG = [
+    {s:'EHR / Clinical Text', t:'Multiple levels', v:12},
+    {s:'EHR / Clinical Text', t:'Token / Span-level', v:5},
+    {s:'EHR / Clinical Text', t:'Document-level', v:4},
+    {s:'EHR / Clinical Text', t:'Sentence-level', v:2},
+    {s:'Biomedical Literature', t:'Multiple levels', v:7},
+    {s:'Biomedical Literature', t:'Token / Span-level', v:5},
+    {s:'Biomedical Literature', t:'Document-level', v:4},
+    {s:'Biomedical Literature', t:'Sentence-level', v:1},
+    {s:'Radiology / Imaging', t:'Multiple levels', v:8},
+    {s:'Radiology / Imaging', t:'Token / Span-level', v:3},
+    {s:'Radiology / Imaging', t:'Sentence-level', v:2},
+    {s:'Radiology / Imaging', t:'Document-level', v:1},
+    {s:'Patient-gen / Sensors', t:'Multiple levels', v:3},
+    {s:'Mixed / Other', t:'Multiple levels', v:2},
+    {s:'Mixed / Other', t:'Token / Span-level', v:1},
+  ];
+
+  // ── Layout ───────────────────────────────────────────────────
+  const W = 1100, H = 480;
+  const ml = 140, mr = 140, mt = 28, mb = 12;
+  const w = W - ml - mr, h = H - mt - mb;
+  const NODE_W = 13, PAD = 9;
+  const TOTAL = 60;
+
+  const svg = d3.select('#sankey-chart').append('svg')
+    .attr('viewBox', `0 0 ${W} ${H}`)
+    .attr('width', '100%').style('display','block');
+  const g = svg.append('g').attr('transform', `translate(${ml},${mt})`);
+  const tip = document.getElementById('fair-tip');
+
+  // ── Position nodes ───────────────────────────────────────────
+  function layoutColumn(items, colorMap, xLeft) {
+    const totalH = h - PAD * (items.length - 1);
+    let y = 0;
+    return items.map(d => {
+      const nodeH = Math.max(4, (d.v / TOTAL) * totalH);
+      const node = {...d, x0: xLeft, x1: xLeft + NODE_W, y0: y, y1: y + nodeH,
+                    color: colorMap[d.name] || '#999'};
+      y += nodeH + PAD;
+      return node;
+    });
+  }
+
+  const xT = 0, xM = w / 2 - NODE_W / 2, xG = w - NODE_W;
+  const tNodes = layoutColumn(TASKS, TASK_C, xT);
+  const mNodes = layoutColumn(MODS, MOD_C, xM);
+  const gNodes = layoutColumn(GRANS, GRAN_C, xG);
+
+  const nodeMap = {};
+  [...tNodes, ...mNodes, ...gNodes].forEach(n => { nodeMap[n.name] = n; });
+
+  // ── Draw flows ───────────────────────────────────────────────
+  // Track current y offset for stacking flows within each node
+  const tOut = {}, mIn = {}, mOut = {}, gIn = {};
+  tNodes.forEach(n => { tOut[n.name] = n.y0; });
+  mNodes.forEach(n => { mIn[n.name] = n.y0; mOut[n.name] = n.y0; });
+  gNodes.forEach(n => { gIn[n.name] = n.y0; });
+
+  function flowH(v) { return Math.max(1, (v / TOTAL) * (h - PAD * (TASKS.length-1))); }
+  // Use a shared scale: height proportional to total dataset height
+  const scale = (h - PAD * (TASKS.length - 1)) / TOTAL;
+
+  function drawFlows(links, srcOut, tgtIn, srcNodes, tgtNodes, colorFn) {
+    links.forEach(lk => {
+      const src = nodeMap[lk.s], tgt = nodeMap[lk.t];
+      if (!src || !tgt) return;
+      const fh = Math.max(1, lk.v * scale);
+      const sy0 = srcOut[lk.s], sy1 = sy0 + fh;
+      const ty0 = tgtIn[lk.t], ty1 = ty0 + fh;
+      srcOut[lk.s] += fh;
+      tgtIn[lk.t]  += fh;
+
+      const x0 = src.x1, x1 = tgt.x0;
+      const cx = (x0 + x1) / 2;
+
+      g.append('path')
+        .attr('d', `M${x0},${sy0} C${cx},${sy0} ${cx},${ty0} ${x1},${ty0}
+                    L${x1},${ty1} C${cx},${ty1} ${cx},${sy1} ${x0},${sy1} Z`)
+        .attr('fill', colorFn(lk.s))
+        .attr('fill-opacity', 0.22)
+        .attr('stroke', 'none')
+        .style('cursor','pointer')
+        .on('mousemove', ev => {
+          tip.style.opacity = 1;
+          tip.style.left = (ev.clientX + 14) + 'px';
+          tip.style.top  = (ev.clientY - 10) + 'px';
+          tip.innerHTML = `<strong>${lk.s}</strong><br>↓ ${lk.t}<br><span style="color:#9bbcde">${lk.v} dataset${lk.v>1?'s':''}</span>`;
+        })
+        .on('mouseleave', () => { tip.style.opacity = 0; })
+        .on('mouseover', function(){ d3.select(this).attr('fill-opacity', 0.5); })
+        .on('mouseout',  function(){ d3.select(this).attr('fill-opacity', 0.22); });
+    });
+  }
+
+  drawFlows(TM, tOut, mIn, tNodes, mNodes, s => TASK_C[s] || '#999');
+  drawFlows(MG, mOut, gIn, mNodes, gNodes, s => MOD_C[s] || '#999');
+
+  // ── Draw nodes ───────────────────────────────────────────────
+  [...tNodes, ...mNodes, ...gNodes].forEach(n => {
+    g.append('rect')
+      .attr('x', n.x0).attr('y', n.y0)
+      .attr('width', NODE_W).attr('height', Math.max(2, n.y1 - n.y0))
+      .attr('fill', n.color).attr('rx', 2).attr('opacity', 0.92);
+
+    // Value inside node if tall enough
+    if (n.y1 - n.y0 > 13) {
+      g.append('text')
+        .attr('x', n.x0 + NODE_W/2).attr('y', (n.y0+n.y1)/2)
+        .attr('dy','0.35em').attr('text-anchor','middle')
+        .attr('font-size', 8).attr('font-family','DM Mono,monospace')
+        .attr('fill','#fff').attr('pointer-events','none')
+        .text(n.v);
+    }
+
+    // Name labels
+    const isTask = n.x0 === xT, isGran = n.x0 === xG;
+    g.append('text')
+      .attr('x', isTask ? n.x0 - 6 : n.x1 + 6)
+      .attr('y', (n.y0+n.y1)/2)
+      .attr('dy','0.35em')
+      .attr('text-anchor', isTask ? 'end' : 'start')
+      .attr('font-size', 10).attr('fill','#222')
+      .attr('pointer-events','none')
+      .text(n.name);
+  });
+
+  // ── Column headers ───────────────────────────────────────────
+  [{x:xT, label:'NLP TASK', a:'start'},
+   {x:xM+NODE_W+6, label:'DATA MODALITY', a:'start'},
+   {x:xG+NODE_W, label:'GRANULARITY', a:'end'}]
+  .forEach(cl => {
+    g.append('text').attr('x', cl.x).attr('y', -12)
+      .attr('text-anchor', cl.a)
+      .attr('font-size', 9).attr('font-family','DM Mono,monospace')
+      .attr('letter-spacing', 1.5).attr('fill','#a89f96')
+      .text(cl.label);
+  });
+})();
+
+// ── FIG 10: FAIR Compliance Heatmap ───────────
+(function(){
+const FAIR_C={'Findable':'#2d5a8e','Accessible':'#c0392b','Interoperable':'#27664a','Reusable':'#6c3d7e'};
+const GROUPS={'Findable':['Persistent ID','Version','Repository URL','Short Name'],'Accessible':['Access Conditions','Access Mechanism','License','Ethics / IRB'],'Interoperable':['File Format','Ontology / Schema','Encoding','Reuse Code'],'Reusable':['Train/Test Split','IAA Score','Limitations','LLM Leakage']};
+const FIELDS=['Persistent ID','Version','Repository URL','Short Name','Access Conditions','Access Mechanism','License','Ethics / IRB','File Format','Ontology / Schema','Encoding','Reuse Code','Train/Test Split','IAA Score','Limitations','LLM Leakage'];
+const GN=Object.keys(GROUPS);
+const M=[
+{n:"RadGraph",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":1,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.984},
+{n:"MIMIC-III",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.938},
+{n:"eICU Collaborative",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.938},
+{n:"n2c2 2018 Cohort",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.75,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.922},
+{n:"RadQA",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0,"Train/Test Split":1,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.922},
+{n:"ODD (Opioid)",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.922},
+{n:"MS-CXR",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.922},
+{n:"CXRGraph",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.75,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":0.5},o:0.922},
+{n:"MIMIC-IV",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"RadGraph-XL",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.906},
+{n:"CADEC",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":1,"Train/Test Split":1,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"MIMIC-CXR",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":0.5,"LLM Leakage":1},o:0.906},
+{n:"BRAX",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"MedJ / MedJEx",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"SOAP Tasks 1&3",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"PIFIR",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.75,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"CHIFIR",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.75,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.906},
+{n:"BC5CDR",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.891},
+{n:"PMC-Patients",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.75,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.891},
+{n:"MedMentions",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":0.5},o:0.891},
+{n:"n2c2 2019 Concept",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.75,"Ethics / IRB":1,"File Format":0.5,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.875},
+{n:"MEDIQA 2021",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.875},
+{n:"Moody 2023",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.875},
+{n:"Med Expert Annot.",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.75,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.875},
+{n:"ArchEHR-QA",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.875},
+{n:"MedNLI",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.875},
+{n:"Biomed-Enriched",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":1,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.875},
+{n:"BioASQ",s:{"Persistent ID":0,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.859},
+{n:"CRAFT Corpus",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.859},
+{n:"EBM-NLP",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.859},
+{n:"Bridge2AI-Voice",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"MeDiSumQA",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"PADS",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"MTSamples",s:{"Persistent ID":0.5,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.859},
+{n:"Medication Extract.",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"SDoH MIMIC-III",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"Temporal Resp.",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"sense disambig.",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.859},
+{n:"MS-CXR-T",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.859},
+{n:"PubMedQA",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.844},
+{n:"ChemProt",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":0.5,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.844},
+{n:"MedSTS",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":1,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.844},
+{n:"CARMEN-I",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.844},
+{n:"ClinText-SP",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.844},
+{n:"Synthetic Mention",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.844},
+{n:"NCBI Disease",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.828},
+{n:"OpenMed NER",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.75,"File Format":0.5,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.828},
+{n:"EchoGraph",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0,"File Format":0,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":1,"IAA Score":1,"Limitations":1,"LLM Leakage":1},o:0.828},
+{n:"Semantic Sim.",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":1,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.812},
+{n:"Moody 2022",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":1,"IAA Score":0.5,"Limitations":0,"LLM Leakage":0.5},o:0.797},
+{n:"nlp-guild/medical",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.734},
+{n:"NLP-FBK/multilingual",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.734},
+{n:"NCATS-EpiSet4",s:{"Persistent ID":0.5,"Version":0,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.75,"IAA Score":0.5,"Limitations":0.5,"LLM Leakage":0.5},o:0.719},
+{n:"bioBERT-ner",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":0.5,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.703},
+{n:"Sadaftb/clinical",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":1,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":0.5,"Ontology / Schema":0.5,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.688},
+{n:"NLP-FBK/wiki",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":1,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":1},o:0.688},
+{n:"MedicalNLPDataset",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.672},
+{n:"Medical_papers",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":1,"Ontology / Schema":0.5,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.656},
+{n:"clinical-entity",s:{"Persistent ID":0.5,"Version":0.5,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0.5,"File Format":0.5,"Ontology / Schema":0.75,"Encoding":1,"Reuse Code":0.5,"Train/Test Split":0.5,"IAA Score":0.5,"Limitations":1,"LLM Leakage":0.5},o:0.641},
+{n:"COVID-19 CORD-19",s:{"Persistent ID":1,"Version":1,"Repository URL":1,"Short Name":1,"Access Conditions":0,"Access Mechanism":1,"License":0.5,"Ethics / IRB":0,"File Format":1,"Ontology / Schema":0,"Encoding":1,"Reuse Code":1,"Train/Test Split":0.5,"IAA Score":0,"Limitations":0.5,"LLM Leakage":0.5},o:0.625}
+];
+
+function sc(v){if(v>=0.99)return'#1d6b3e';if(v>=0.74)return'#4caf75';if(v>=0.49)return'#f0c040';if(v>0.01)return'#e07b3a';return'#d44c2a';}
+
+const CELL_W=38,CELL_H=15,GRP_GAP=10,LEFT_W=140,SCORE_W=44;
+const HEADER_H=80,LABEL_AREA_H=78,TOP_H=HEADER_H+LABEL_AREA_H;
+
+const colX=[];let cxp=0;
+GN.forEach((g,gi)=>{GROUPS[g].forEach(()=>{colX.push(cxp);cxp+=CELL_W;});if(gi<GN.length-1)cxp+=GRP_GAP;});
+const COLS_W=cxp;
+const W=LEFT_W+COLS_W+SCORE_W+20,H=TOP_H+M.length*CELL_H;
+
+const svg=d3.select('#hmap').append('svg').attr('viewBox',`0 0 ${W} ${H}`).attr('width',W).style('display','block').style('max-width','100%');
+const tip=document.getElementById('fair-tip');
+
+const bgG=svg.append('g').attr('class','hbg');bgG.lower();
+const labelG=svg.append('g').attr('class','hlabels');
+
+// Group bars
+const GRP_Y=6,GRP_H=20;let gx=LEFT_W;
+GN.forEach((g,gi)=>{
+  const gw=GROUPS[g].length*CELL_W;
+  svg.append('rect').attr('x',gx).attr('y',GRP_Y).attr('width',gw-2).attr('height',GRP_H).attr('fill',FAIR_C[g]).attr('rx',2).attr('opacity',0.92);
+  svg.append('text').attr('x',gx+gw/2).attr('y',GRP_Y+GRP_H/2+1).attr('text-anchor','middle').attr('dominant-baseline','middle').attr('font-size',9.5).attr('fill','#fff').attr('font-family','DM Mono,monospace').attr('letter-spacing',1).text(g.toUpperCase());
+  gx+=gw+(gi<GN.length-1?GRP_GAP:0);
+});
+
+// Score header
+svg.append('text').attr('x',LEFT_W+COLS_W+GRP_GAP+SCORE_W/2).attr('y',TOP_H-8).attr('text-anchor','middle').attr('font-size',8).attr('fill','#aaa').attr('font-family','DM Mono,monospace').text('SCORE');
+
+// Grid
+const gridG=svg.append('g').attr('transform',`translate(${LEFT_W},${TOP_H})`);
+M.forEach((ds,ri)=>{
+  const ry=ri*CELL_H;
+  if(ri%2===0)bgG.append('rect').attr('x',0).attr('y',TOP_H+ry).attr('width',W).attr('height',CELL_H).attr('fill','#faf8f4').style('pointer-events','none');
+  svg.append('text').attr('x',LEFT_W-5).attr('y',TOP_H+ry+CELL_H/2).attr('text-anchor','end').attr('dominant-baseline','middle').attr('font-size',9).attr('fill','#333').text(ds.n);
+  FIELDS.forEach((f,fi)=>{
+    const score=ds.s[f];
+    gridG.append('rect').attr('x',colX[fi]+1).attr('y',ry+1).attr('width',CELL_W-2).attr('height',CELL_H-2).attr('fill',sc(score)).attr('rx',1).attr('opacity',0.88).style('cursor','pointer')
+      .on('mousemove',ev=>{
+        tip.style.opacity=1;tip.style.left=(ev.clientX+14)+'px';tip.style.top=(ev.clientY-10)+'px';
+        const gr=GN.find(g=>GROUPS[g].includes(f));
+        tip.innerHTML=`<strong>${ds.n}</strong><br>${f}<br>${score>=1?'✓ Complete':score===0?'✗ Missing':'⚠ Partial ('+score+')'}<br><span style="color:#9bbcde;font-size:10px">${gr}</span>`;
+      }).on('mouseleave',()=>{tip.style.opacity=0;});
+  });
+  const bx=COLS_W+GRP_GAP,bw=SCORE_W-10;
+  gridG.append('rect').attr('x',bx).attr('y',ry+2).attr('width',bw).attr('height',CELL_H-4).attr('fill','#e8e4de').attr('rx',1);
+  gridG.append('rect').attr('x',bx).attr('y',ry+2).attr('width',bw*ds.o).attr('height',CELL_H-4).attr('fill',sc(ds.o)).attr('rx',1).attr('opacity',0.9);
+  gridG.append('text').attr('x',bx+bw+3).attr('y',ry+CELL_H/2).attr('dominant-baseline','middle').attr('font-size',8).attr('fill','#666').attr('font-family','DM Mono,monospace').text((ds.o*100).toFixed(0));
+});
+
+// Column labels — drawn last, raised above grid
+FIELDS.forEach((f,fi)=>{
+  labelG.append('text')
+    .attr('transform',`translate(${LEFT_W+colX[fi]+CELL_W/2},${TOP_H}) rotate(-55)`)
+    .attr('text-anchor','start').attr('dominant-baseline','auto')
+    .attr('font-size',9.5).attr('fill','#333').text(f);
+});
+labelG.raise();
+
+// Separator lines
+let sx=LEFT_W;
+GN.forEach((g,gi)=>{
+  sx+=GROUPS[g].length*CELL_W;
+  if(gi<GN.length-1){
+    svg.append('line').attr('x1',sx+GRP_GAP/2).attr('x2',sx+GRP_GAP/2).attr('y1',GRP_Y).attr('y2',H).attr('stroke','#d4cfc8').attr('stroke-width',1);
+    sx+=GRP_GAP;
+  }
+});
+})();
+
+</script>
+<div class="fair-tip" id="fair-tip"></div>
+</body>
+</html>
