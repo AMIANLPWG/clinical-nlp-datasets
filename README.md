@@ -14,7 +14,7 @@ A standardized, community-maintained catalog of clinical and biomedical NLP data
 |                          |                                                                                                                                 |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
 | 📊**Browse Datasets**    | [View Full Metadata Table (Google Sheets)](https://docs.google.com/spreadsheets/d/1_quhlfDgXRP2lY-JS3J0PYMrO5t1Bb8yY0koeR6gDwo) |
-| 🔍**Interactive Search** | [Search & Filter Datasets]https://amianlpwg.github.io/clinical-nlp-datasets/index.html)                                                 |
+| 🔍**Interactive Search** | [Search & Filter Datasets](https://amianlpwg.github.io/clinical-nlp-datasets/index.html)                                                 |
 | ➕**Suggest a Dataset**  | [Open an Issue](https://github.com/AMIANLPWG/clinical-nlp-datasets/issues/new?template=dataset_submission.yml)                                                                |
 | 📄**Cite This Work**     | [Citation](#citation)                                                                                                           |
 
