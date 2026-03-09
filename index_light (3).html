@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinical NLP Dataset Registry — AMIA NLP Working Group</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f5f2;
+    --bg2: #efecea;
+    --surface: #ffffff;
+    --surface2: #f2f0ed;
+    --border: #e0dbd5;
+    --border-light: #ede9e4;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-light: #eff4ff;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --green-border: #bbf7d0;
+    --red: #dc2626;
+    --red-light: #fff1f2;
+    --red-border: #fecaca;
+    --text: #1a1714;
+    --text-muted: #57534e;
+    --text-dim: #a8a29e;
+    --ink: #292524;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "DM Sans", sans-serif; font-weight: 300; min-height: 100vh; line-height: 1.6; }
+
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2.5rem; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; height: 58px; }
+  .header-left { display: flex; align-items: center; gap: .75rem; }
+  .logo-mark { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px rgba(37,99,235,0.5); animation: pulse 2.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)} }
+  .header-title { font-family: "DM Mono", monospace; font-size: .75rem; color: var(--text-muted); letter-spacing: .04em; }
+  .header-right { display: flex; align-items: center; gap: 1rem; }
+  .header-link { font-size: .8rem; color: var(--text-dim); text-decoration: none; letter-spacing: .01em; transition: color .2s; }
+  .header-link:hover { color: var(--accent); }
+  .header-cta { font-size: .78rem; background: var(--accent); color: white; padding: .35rem .9rem; border-radius: 6px; text-decoration: none; font-weight: 500; transition: background .2s; }
+  .header-cta:hover { background: var(--accent-hover); }
+
+  .hero { background: var(--surface); border-bottom: 1px solid var(--border); padding: 3.5rem 2.5rem 3rem; }
+  .hero-inner { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
+  .hero-eyebrow { font-family: "DM Mono", monospace; font-size: .68rem; color: var(--accent); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+  .hero-eyebrow::before { content:""; display:inline-block; width:20px; height:1px; background:var(--accent); }
+  .hero h1 { font-family: "Lora", serif; font-size: clamp(1.8rem,3.5vw,2.6rem); line-height: 1.2; color: var(--ink); margin-bottom: 1rem; font-weight: 600; }
+  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero-desc { color: var(--text-muted); font-size: .92rem; max-width: 520px; line-height: 1.8; }
+  .hero-stats { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin-top: .5rem; }
+  .stat { display: flex; flex-direction: column; gap: 4px; padding: 0 2.5rem 0 0; }
+  .stat-num { font-family: "DM Mono", monospace; font-size: 1.6rem; font-weight: 500; color: var(--ink); line-height: 1; letter-spacing: -.01em; }
+  .stat-label { font-size: .65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .12em; font-family: "DM Mono", monospace; }
+  .stat-divider { width: 1px; height: 2.5rem; background: var(--border); margin-right: 2.5rem; flex-shrink: 0; }
+  .stat-hr { display: none; }
+
+  .controls-wrap { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.25rem 2.5rem; position: sticky; top: 58px; z-index: 90; }
+  .controls { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: .75rem; }
+  .search-row { position: relative; }
+  .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
+  .search-icon svg { width: 15px; height: 15px; }
+  input[type="search"] { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: .65rem 1rem .65rem 2.4rem; color: var(--text); font-family: "DM Sans", sans-serif; font-size: .88rem; font-weight: 300; outline: none; transition: border-color .2s, box-shadow .2s, background .2s; }
+  input[type="search"]:focus { background: var(--surface); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
+  input[type="search"]::placeholder { color: var(--text-dim); }
+  .filter-row { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+  .filter-label { font-family: "DM Mono", monospace; font-size: .68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .1em; white-space: nowrap; margin-right: .2rem; }
+  select { background: var(--bg2); border: 1px solid var(--border); border-radius: 7px; padding: .4rem 1.9rem .4rem .75rem; color: var(--text-muted); font-family: "DM Sans", sans-serif; font-size: .8rem; outline: none; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%23a8a29e' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; transition: border-color .2s, color .2s; }
+  select:hover, select:focus { border-color: var(--accent); color: var(--text); outline: none; }
+  .filter-reset { background: none; border: 1px solid var(--border); border-radius: 7px; padding: .4rem .85rem; color: var(--text-dim); font-family: "DM Mono", monospace; font-size: .7rem; cursor: pointer; letter-spacing: .04em; transition: all .2s; margin-left: auto; }
+  .filter-reset:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+  .table-area { max-width: 1100px; margin: 0 auto; padding: 1.5rem 2.5rem 5rem; }
+  .results-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem; }
+  .results-info { font-family: "DM Mono", monospace; font-size: .7rem; color: var(--text-dim); letter-spacing: .04em; }
+  .results-info strong { color: var(--accent); font-weight: 500; }
+  .fair-note { font-size: .72rem; color: var(--text-dim); display: flex; align-items: center; gap: .4rem; }
+  .fair-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  thead tr { background: var(--bg2); }
+  th { font-family: "DM Mono", monospace; font-size: .63rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); padding: .7rem 1rem; text-align: left; cursor: pointer; white-space: nowrap; user-select: none; border-bottom: 1px solid var(--border); transition: color .15s; }
+  th:hover { color: var(--text-muted); }
+  th.sort-active { color: var(--accent); }
+  th .sort-arrow { margin-left: 4px; opacity: .35; font-size: .7rem; }
+  th.sort-active .sort-arrow { opacity: 1; }
+  tbody tr { border-bottom: 1px solid var(--border-light); transition: background .12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #fafaf9; }
+  td { padding: .9rem 1rem; vertical-align: middle; color: var(--text-muted); }
+  td.name-cell { min-width: 160px; max-width: 200px; word-break: break-word; white-space: normal; }
+  td.name-cell a { color: var(--accent); text-decoration: none; font-weight: 500; font-size: .875rem; display: block; }
+  td.name-cell a:hover { text-decoration: underline; }
+  td.desc-cell { color: var(--text-dim); font-size: .78rem; max-width: 220px; line-height: 1.55; }
+  .pill { display: inline-block; font-size: .72rem; padding: 2px 9px; border-radius: 99px; background: var(--accent-light); color: var(--accent); border: 1px solid #bfdbfe; white-space: nowrap; font-weight: 400; }
+  .pill.setting { background: var(--green-light); color: var(--green); border-color: var(--green-border); }
+  .badge-access { display: inline-flex; align-items: center; gap: 5px; font-family: "DM Mono", monospace; font-size: .65rem; padding: 3px 9px; border-radius: 99px; white-space: nowrap; letter-spacing: .03em; font-weight: 400; }
+  .badge-access::before { content:""; width:5px; height:5px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .badge-access.open { background: var(--green-light); border: 1px solid var(--green-border); color: var(--green); }
+  .badge-access.restricted { background: var(--red-light); border: 1px solid var(--red-border); color: var(--red); }
+  .year-cell { font-family: "DM Mono", monospace; font-size: .78rem; color: var(--text-dim); }
+
+  .no-results { text-align: center; padding: 5rem 2rem; color: var(--text-dim); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  .no-results-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: .25; }
+  .no-results p { font-size: .85rem; line-height: 1.6; }
+  .no-results strong { color: var(--text-muted); }
+
+  footer { border-top: 1px solid var(--border); background: var(--surface); padding: 2rem 2.5rem; }
+  .footer-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  .footer-left { font-size: .78rem; color: var(--text-dim); line-height: 1.7; }
+  .footer-left strong { color: var(--text-muted); font-weight: 500; }
+  .footer-left a { color: var(--text-dim); text-decoration: none; }
+  .footer-left a:hover { color: var(--accent); }
+  .footer-badge { font-family: "DM Mono", monospace; font-size: .65rem; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); letter-spacing: .06em; display: flex; align-items: center; gap: 6px; }
+  .footer-badge::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--green); }
+
+  @media (max-width: 720px) {
+    .hero-stats { gap: 1.5rem; flex-wrap: wrap; }
+    .stat-divider { display: none; }
+    .stat { padding-right: 0; }
+    .stat-num { font-size: 1.4rem; }
+    .table-area { padding: 1rem 1rem 4rem; }
+    .controls-wrap { padding: 1rem; }
+  }
+  td.pid-cell { font-family: "DM Mono", monospace; font-size: .68rem; color: var(--text-dim); max-width: 170px; word-break: break-all; }
+  td.pid-cell a { color: var(--accent); text-decoration: none; }
+  td.pid-cell a:hover { text-decoration: underline; }
+  .pid-none { color: var(--text-dim); opacity: .45; font-family: "DM Mono", monospace; font-size: .68rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo-mark"></div>
+    <span class="header-title">AMIA NLP Working Group · Dataset Registry</span>
+  </div>
+  <div class="header-right">
+    <a href="https://github.com/AMIANLPWG/clinical-nlp-datasets/blob/main/docs/Process_Documentation_1.0.md" target="_blank" class="header-link">Documentation</a>
+    <a href="https://github.com/AMIANLPWG/clinical-nlp-datasets/blob/main/docs/metadata_schema.md" target="_blank" class="header-link">Metadata Schema</a>
+    <a href="https://github.com/AMIANLPWG/clinical-nlp-datasets" target="_blank" class="header-cta">GitHub ↗</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <p class="hero-eyebrow">Clinical &amp; Biomedical NLP · FAIR-Aligned Catalog · 2026</p>
+    <h1>Find the right dataset<br>for <em>clinical NLP</em> research</h1>
+    <p class="hero-desc">A standardized, community-maintained registry of clinical and biomedical NLP datasets curated by the AMIA NLP Working Group. Each entry is documented using a 33-variable FAIR-aligned metadata framework.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">60</span><span class="stat-label">Datasets</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">33</span><span class="stat-label">Metadata Variables</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">10</span><span class="stat-label">NLP Tasks</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">2026</span><span class="stat-label">Last Updated</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="controls-wrap">
+  <div class="controls">
+    <div class="search-row">
+      <span class="search-icon">
+        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="6.5" cy="6.5" r="4.5" stroke="#a8a29e" stroke-width="1.4"/>
+          <path d="M10 10l3.5 3.5" stroke="#a8a29e" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <input type="search" id="search" placeholder="Search by dataset name, task, description…" autocomplete="off">
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">Filter by</span>
+      <select id="filter-task">
+        <option value="">All Tasks</option>
+        <option>NER</option><option>Relation Extraction</option><option>De-identification</option>
+        <option>Temporal Extraction</option><option>Multi-task</option><option>ICD Coding</option>
+        <option>Clinical QA</option><option>Summarization</option><option>NLI / STS</option>
+        <option>Classification</option>
+      </select>
+      <select id="filter-setting">
+        <option value="">All Settings</option>
+        <option>ICU</option><option>Outpatient</option><option>Emergency Department</option>
+        <option>Inpatient</option><option>Radiology</option><option>Multi-setting</option>
+      </select>
+      <select id="filter-access">
+        <option value="">All Access Types</option>
+        <option>Open</option><option>Restricted</option>
+      </select>
+      <select id="filter-language">
+        <option value="">All Languages</option>
+        <option>English</option><option>Chinese</option><option>Spanish</option>
+        <option>French</option><option>Multilingual</option>
+      </select>
+      <select id="filter-year"><option value="">All Years</option></select>
+      <button class="filter-reset" onclick="resetFilters()">↺ Reset filters</button>
+    </div>
+  </div>
+</div>
+
+<div class="table-area">
+  <div class="results-bar">
+    <p class="results-info">Showing <strong id="shown-count">–</strong> of <strong id="total-shown">–</strong> datasets</p>
+    <p class="fair-note"><span class="fair-dot"></span>FAIR-aligned metadata · Updated 2025</p>
+  </div>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('name')" id="th-name">Dataset <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('task')" id="th-task">Primary Task <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('setting')" id="th-setting">Setting <span class="sort-arrow">↕</span></th>
+            <th onclick="sortBy('language')" id="th-language">Language <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('access')" id="th-access">Access <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('year')" id="th-year">Year <span class="sort-arrow">↕</span></th>
+        <th onclick="sortBy('pid')" id="th-pid">PID / DOI <span class="sort-arrow">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+    <div id="no-results" class="no-results" style="display:none">
+      <div class="no-results-icon">◎</div>
+      <p>No datasets match your current filters.<br><strong>Try adjusting the search or clearing the filters.</strong></p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">
+      <strong>AMIA NLP Working Group · Clinical NLP Dataset Registry</strong><br>
+      Maintained by contributors from UTHealth Houston, NLM/NIH, UMinn, UF, Mayo Clinic, Stanford, Yale, and more.<br>
+      <a href="https://github.com/AMIANLPWG/clinical-nlp-datasets/blob/main/docs/Process_Documentation_1.0.md" target="_blank">Documentation</a> ·
+      <a href="https://github.com/AMIANLPWG/clinical-nlp-datasets/blob/main/docs/metadata_schema.md" target="_blank">Metadata Schema</a> ·
+      <a href="https://github.com/AMIANLPWG/clinical-nlp-datasets" target="_blank">GitHub repository</a>
+    </div>
+    <div class="footer-badge">Community Maintained · Open Science</div>
+  </div>
+</footer>
+
+<script>
+const datasets = [{"name": "MIMIC-III", "url": "https://physionet.org/content/mimiciii/1.4/", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2016, "description": "", "pid": "10.13026/C2XW26"}, {"name": "MIMIC-IV", "url": "https://physionet.org/content/mimiciv/3.1/", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2024, "description": "", "pid": "10.13026/kpb9-mt58"}, {"name": "n2c2 2018 - Cohort Selection", "url": "https://portal.dbmi.hms.harvard.edu/projects/n2c2-2018-t1/", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2018, "description": "", "pid": "10.1093/jamia/ocz163"}, {"name": "n2c2 2019 - Concept Normalization", "url": "https://n2c2.dbmi.hms.harvard.edu/2019-track-3", "task": "Multi-task", "setting": "Inpatient", "language": "English", "access": "Restricted", "year": 2019, "description": "", "pid": "10.1093/jamia/ocaa106"}, {"name": "RadGraph-XL", "url": "https://physionet.org/content/radgraph-xl/1.0.0/", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2025, "description": "", "pid": "10.13026/j8e7-pr22"}, {"name": "BioASQ", "url": "https://participants-area.bioasq.org/datasets/", "task": "Multi-task", "setting": "Multi-setting", "language": "Multilingual", "access": "Restricted", "year": 2025, "description": "", "pid": ""}, {"name": "PubMedQA", "url": "https://pubmedqa.github.io/", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2019, "description": "", "pid": "10.18653/v1/D19-1259"}, {"name": "BC5CDR", "url": "http://www.biocreative.org/tasks/biocreative-v/track-3-cdr/", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2016, "description": "", "pid": "10.1093/database/baw068"}, {"name": "PMC-Patients", "url": "https://pmc-patients.github.io/", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2023, "description": "", "pid": "10.1038/s41597-023-02814-8"}, {"name": "CADEC", "url": "https://data.csiro.au/", "task": "Multi-task", "setting": "Emergency Department", "language": "English", "access": "Restricted", "year": 2015, "description": "", "pid": "10.1016/j.jbi.2015.03.010"}, {"name": "MedMentions", "url": "https://github.com/chanzuckerberg/MedMentions", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2019, "description": "", "pid": "10.48550/arXiv.1902.09476"}, {"name": "ChemProt (BioCreative VI)", "url": "https://huggingface.co/datasets/bigbio/chemprot", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2017, "description": "", "pid": "10.1093/database/bay073"}, {"name": "CRAFT Corpus", "url": "http://bionlp-corpora.sourceforge.net/CRAFT/", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2017, "description": "", "pid": "10.1186/1471-2105-13-161"}, {"name": "RadQA", "url": "https://physionet.org/content/radqa/1.0.0/", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2022, "description": "", "pid": "10.13026/ckkp-6y19"}, {"name": "COVID-19 Open Research Dataset", "url": "https://github.com/allenai/cord19?tab=readme-ov-file", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2022, "description": "", "pid": "10.18653/v1/2020.nlpcovid19-acl.1"}, {"name": "EBM-NLP", "url": "https://github.com/bepnye/EBM-NLP", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2019, "description": "", "pid": "10.18653/v1/P18-1019"}, {"name": "MEDIQA 2021", "url": "https://github.com/abachaa/MEDIQA2021", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2021, "description": "", "pid": "10.18653/v1/2021.bionlp-1.8"}, {"name": "eICU Collaborative Research Database", "url": "https://physionet.org/content/eicu-crd/2.0/", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2019, "description": "", "pid": "10.13026/C2WM1R"}, {"name": "MIMIC-CXR", "url": "https://physionet.org/content/mimic-cxr/2.1.0/", "task": "Multi-task", "setting": "Emergency Department", "language": "English", "access": "Restricted", "year": 2024, "description": "", "pid": "10.13026/4jqj-jw95"}, {"name": "RadGraph", "url": "https://github.com/Stanford-AIMI/radgraph", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2021, "description": "", "pid": "10.13026/hm87-5p47"}, {"name": "Bridge2AI-Voice v1.0", "url": "https://physionet.org/news/post/bridge2ai-voice", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2025, "description": "", "pid": "10.13026/37yb-1t42"}, {"name": "MeDiSumQA", "url": "https://physionet.org/content/medisumqa/1.0.0/", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2025, "description": "", "pid": "10.13026/f566-h049"}, {"name": "BRAX (Brazilian Chest X-ray)", "url": "https://physionet.org/content/brax/1.1.0/", "task": "Multi-task", "setting": "Inpatient", "language": "Multilingual", "access": "Restricted", "year": 2022, "description": "", "pid": "10.13026/grwk-yh18"}, {"name": "ODD (Opioid Detection Dataset)", "url": "https://physionet.org/content/nlp-opioid-behavior-detection/1.0.0/", "task": "Multi-task", "setting": "Emergency Department", "language": "English", "access": "Restricted", "year": 2024, "description": "", "pid": "10.13026/qrje-z188"}, {"name": "PADS (Parkinson's Disease Smartwatch)", "url": "https://physionet.org/content/parkinsons-disease-smartwatch/1.0.0/", "task": "Multi-task", "setting": "Outpatient", "language": "Multilingual", "access": "Restricted", "year": 2024, "description": "", "pid": "10.13026/m0w9-zx22"}, {"name": "MTSamples", "url": "https://www.kaggle.com/datasets/tboyle10/medicaltranscriptions", "task": "Multi-task", "setting": "Outpatient", "language": "English", "access": "Restricted", "year": 2017, "description": "", "pid": "https://www.kaggle.com/datasets/tboyle10/medicaltranscriptions"}, {"name": "George B. Moody Challenge 2023", "url": "https://moody-challenge.physionet.org/2023/", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2023, "description": "", "pid": "10.13026/976s-6619"}, {"name": "George B. Moody Challenge 2022", "url": "https://moody-challenge.physionet.org/2022/", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2023, "description": "", "pid": "10.13026/t49p-5v35"}, {"name": "Medical Expert Annotations (LLM Hallucinations)", "url": "https://physionet.org/content/ann-pt-summ/1.0.1/", "task": "Multi-task", "setting": "Inpatient", "language": "English", "access": "Restricted", "year": 2025, "description": "", "pid": "10.13026/782p-p614"}, {"name": "Medication Extraction Labels (MIMIC-IV-Note)", "url": "https://physionet.org/content/medication-labels-mimic-note/1.0.0/", "task": "Multi-task", "setting": "Inpatient", "language": "English", "access": "Restricted", "year": 2024, "description": "", "pid": "10.13026/p5st-e137"}, {"name": "Social Determinants of Health (MIMIC-III)", "url": "https://physionet.org/content/annotation-dataset-sdoh/1.0.1/", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2024, "description": "", "pid": "10.13026/qk2y-wx30"}, {"name": "Temporal Respiratory Support Dataset", "url": "https://physionet.org/content/temporal-respiratory-support/", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2024, "description": "", "pid": "10.13026/8n2e-6e23"}, {"name": "ArchEHR-QA", "url": "https://physionet.org/content/archehr-qa-bionlp-task-2025/1.3/", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2026, "description": "", "pid": "10.13026/n708-sn25"}, {"name": "NCBI Disease", "url": "https://huggingface.co/datasets/ncbi/ncbi_disease", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2014, "description": "", "pid": "10.1016/j.jbi.2013.12.006"}, {"name": "MedNLI", "url": "https://physionet.org/content/mednli/1.0.0/", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2018, "description": "", "pid": "10.13026/C2RS98"}, {"name": "MedSTS", "url": "https://n2c2.dbmi.hms.harvard.edu/2019-track-1", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2019, "description": "", "pid": "10.48550/arXiv.1808.09397"}, {"name": "CARMEN-I", "url": "https://physionet.org/content/carmen-i/1.0.1/", "task": "Multi-task", "setting": "Inpatient", "language": "Spanish", "access": "Restricted", "year": 2024, "description": "", "pid": "10.13026/bxrx-y344"}, {"name": "ClinText-SP & RigoBERTa", "url": "https://huggingface.co/PlanTL-GOB-ES", "task": "Multi-task", "setting": "Inpatient", "language": "Spanish", "access": "Restricted", "year": 2025, "description": "", "pid": "10.48550/arXiv.2503.18594"}, {"name": "OpenMed NER", "url": "https://huggingface.co/OpenMed", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2025, "description": "", "pid": "10.48550/arXiv.2508.01630"}, {"name": "MedJ / MedJEx", "url": "https://github.com/MozziTasteBitter/MedJEx", "task": "Multi-task", "setting": "Emergency Department", "language": "English", "access": "Restricted", "year": 2022, "description": "", "pid": "10.48550/arXiv.2210.05875"}, {"name": "Biomed-Enriched", "url": "https://huggingface.co/datasets/almanach/Biomed-Enriched", "task": "Multi-task", "setting": "Emergency Department", "language": "English", "access": "Restricted", "year": 2025, "description": "", "pid": "10.48550/arXiv.2506.20331"}, {"name": "Semantic similairty and relatedness", "url": "https://conservancy.umn.edu/items/74708665-a6b6-4f06-8f1a-c39ca8839f7a", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2011, "description": "", "pid": "10.13020/D6CX04"}, {"name": "sense disambiguation repository", "url": "https://lhncbc.nlm.nih.gov/ii/tools/MetaMap/additional-tools/WSDServer.html", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2024, "description": "", "pid": "10.1186/1471-2105-12-223"}, {"name": "EchoGraph-annotated ECHO-NOTE2NUM Examples", "url": "https://physionet.org/content/echograph-note2num-annotations/1.0.0/", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2025, "description": "", "pid": "10.13026/2h1h-9n57"}, {"name": "MS-CXR", "url": "https://physionet.org/content/ms-cxr/1.1.0/", "task": "Multi-task", "setting": "Radiology", "language": "English", "access": "Restricted", "year": 2024, "description": "", "pid": "10.13026/ms5s-2a34"}, {"name": "MS-CXR-T", "url": "https://physionet.org/content/ms-cxr-t/1.0.0/", "task": "Multi-task", "setting": "Radiology", "language": "English", "access": "Restricted", "year": 2023, "description": "", "pid": "10.13026/pg10-j984"}, {"name": "CXRGraph", "url": "https://physionet.org/content/cxrgraph/1.0.0/", "task": "Multi-task", "setting": "Radiology", "language": "English", "access": "Restricted", "year": 2025, "description": "", "pid": "10.13026/p7kf-t860"}, {"name": "Tasks 1 and 3 from Progress Note Understanding Suite of Tasks: SOAP Note Tagging and Problem List Summarization", "url": "https://physionet.org/content/task-1-3-soap-note-tag/1.0.0/", "task": "Multi-task", "setting": "ICU", "language": "English", "access": "Restricted", "year": 2022, "description": "", "pid": "10.13026/wks0-w041"}, {"name": "PIFIR: PET-CT Invasive Fungal Infection Reports", "url": "https://physionet.org/content/pifir/1.0.0/", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2025, "description": "", "pid": "10.13026/d51v-j343"}, {"name": "CHIFIR", "url": "https://physionet.org/content/corpus-fungal-infections/1.0.2/", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2024, "description": "", "pid": "10.13026/m1rk-ns13"}, {"name": "Synthetic Mention Corpora for Disease Entity Recognition and Normalization", "url": "https://physionet.org/content/synthetic-mention-corpora/1.0.0/", "task": "Multi-task", "setting": "Emergency Department", "language": "English", "access": "Restricted", "year": 2025, "description": "", "pid": "10.13026/p5pn-ty93"}, {"name": "Sadaftb/clinical-nlp-dataset-raw", "url": "https://huggingface.co/datasets/Sadaftb/clinical-nlp-dataset-raw", "task": "Multi-task", "setting": "Emergency Department", "language": "English", "access": "Restricted", "year": 0, "description": "", "pid": ""}, {"name": "NCATS-EpiSet4", "url": "https://huggingface.co/datasets/ncats/EpiSet4NER-v2", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2024, "description": "", "pid": ""}, {"name": "dylanmontoya22/bioBERT-ner-biomedical-text", "url": "https://huggingface.co/datasets/dylanmontoya22/bioBERT-ner-biomedical-text", "task": "Multi-task", "setting": "Emergency Department", "language": "English", "access": "Restricted", "year": 0, "description": "", "pid": ""}, {"name": "nlp-guild/medical-data", "url": "https://huggingface.co/datasets/nlp-guild/medical-data", "task": "Multi-task", "setting": "Multi-setting", "language": "Chinese", "access": "Restricted", "year": 0, "description": "", "pid": ""}, {"name": "ahmedabdelwahed/Medical_papers_title_and_abstract_NLP_dataset", "url": "https://huggingface.co/datasets/ahmedabdelwahed/Medical_papers_title_and_abstract_NLP_dataset", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2024, "description": "", "pid": ""}, {"name": "upayan2003/MedicalNLPDataset", "url": "https://huggingface.co/datasets/upayan2003/MedicalNLPDataset", "task": "Multi-task", "setting": "Emergency Department", "language": "English", "access": "Restricted", "year": 2025, "description": "", "pid": ""}, {"name": "NLP-FBK/medical-wikipedia-english", "url": "https://huggingface.co/datasets/NLP-FBK/medical-wikipedia-english", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 0, "description": "", "pid": ""}, {"name": "NLP-FBK/multilingual-medical-reasoning-traces", "url": "https://huggingface.co/datasets/NLP-FBK/multilingual-medical-reasoning-traces", "task": "Multi-task", "setting": "Emergency Department", "language": "Multilingual", "access": "Restricted", "year": 2025, "description": "", "pid": ""}, {"name": "Savindu9x/clinical-entity-extraction-dataset", "url": "https://huggingface.co/datasets/Savindu9x/clinical-entity-extraction-dataset", "task": "Multi-task", "setting": "Multi-setting", "language": "English", "access": "Restricted", "year": 2025, "description": "", "pid": ""}];
+
+let sortKey = "year", sortDir = -1;
+
+const years = [...new Set(datasets.map(d=>d.year))].sort((a,b)=>b-a);
+const yearSel = document.getElementById("filter-year");
+years.forEach(y => { const o = document.createElement("option"); o.value=y; o.textContent=y; yearSel.appendChild(o); });
+
+function render() {
+  const q = document.getElementById("search").value.toLowerCase();
+  const task = document.getElementById("filter-task").value;
+  const setting = document.getElementById("filter-setting").value;
+  const access = document.getElementById("filter-access").value;
+  const language = document.getElementById("filter-language").value;
+  const year = document.getElementById("filter-year").value;
+
+  let filtered = datasets.filter(d => {
+    if (q && !`${d.name} ${d.task} ${d.description} ${d.setting} ${d.language}`.toLowerCase().includes(q)) return false;
+    if (task && d.task !== task) return false;
+    if (setting && d.setting !== setting) return false;
+    if (access && d.access !== access) return false;
+    if (language && d.language !== language) return false;
+    if (year && d.year !== parseInt(year)) return false;
+    return true;
+  });
+
+  filtered.sort((a,b) => {
+    const complete = d => (d.year > 0 ? 1 : 0) + (d.pid ? 1 : 0);
+    const ca = complete(a), cb = complete(b);
+    if (ca !== cb) return cb - ca;
+    let va=a[sortKey], vb=b[sortKey];
+    if (typeof va==="string") return sortDir*va.localeCompare(vb);
+    return sortDir*(vb-va);
+  });
+
+  const tbody = document.getElementById("table-body");
+  const noRes = document.getElementById("no-results");
+
+  if (filtered.length===0) { tbody.innerHTML=""; noRes.style.display="block"; }
+  else {
+    noRes.style.display="none";
+    tbody.innerHTML = filtered.map(d => `
+      <tr>
+        <td class="name-cell"><a href="${d.url}" target="_blank" rel="noopener">${d.name}</a></td>
+        <td><span class="pill">${d.task}</span></td>
+        <td><span class="pill setting">${d.setting}</span></td>
+        <td>${d.language}</td>
+        <td><span class="badge-access ${d.access.toLowerCase()}">${d.access}</span></td>
+        <td class="year-cell">${d.year > 0 ? d.year : '<span style="opacity:.4">—</span>'}</td>
+        <td class="pid-cell">${d.pid ? `<a href="https://doi.org/${d.pid}" target="_blank" rel="noopener">${d.pid}</a>` : '<span class="pid-none">N/A</span>'}</td>
+      </tr>`).join("");
+  }
+
+  document.getElementById("shown-count").textContent = filtered.length;
+  document.getElementById("total-shown").textContent = datasets.length;
+
+  ["name","task","setting","language","access","year","pid"].forEach(k => {
+    const el = document.getElementById("th-"+k);
+    if (!el) return;
+    el.classList.toggle("sort-active", k===sortKey);
+    el.querySelector(".sort-arrow").textContent = k===sortKey ? (sortDir===1?"↑":"↓") : "↕";
+  });
+}
+
+function sortBy(key) { if(sortKey===key) sortDir*=-1; else{sortKey=key;sortDir=1;} render(); }
+function resetFilters() {
+  document.getElementById("search").value="";
+  ["filter-task","filter-setting","filter-access","filter-language","filter-year"].forEach(id=>document.getElementById(id).value="");
+  render();
+}
+
+document.getElementById("search").addEventListener("input", render);
+["filter-task","filter-setting","filter-access","filter-language","filter-year"].forEach(id=>document.getElementById(id).addEventListener("change",render));
+render();
+</script>
+</body>
+</html>
