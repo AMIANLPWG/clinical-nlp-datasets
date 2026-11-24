@@ -105,7 +105,7 @@ Datasets were identified through a **concept-based search strategy** on major da
 
 **Exclusion criteria:** proprietary or not publicly accessible datasets, and resources outside the clinical or biomedical domain. Publicly accessible datasets with limited documentation are retained so that documentation gaps can be characterized.
 
-→ Full methodology: [`docs/Process_Documentation_1.0.md`](docs/Process_Documentation_1.0.md) and [`docs/screening_criteria.md`](docs/screening_criteria.md)
+→ Full methodology: [`docs/Process_Documentation_1.1.md`](docs/Process_Documentation_1.1.md) and [`docs/screening_criteria.md`](docs/screening_criteria.md)
 
 ---
 
