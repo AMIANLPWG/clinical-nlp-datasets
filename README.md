@@ -87,7 +87,7 @@ The framework is aligned with the [FAIR data principles](https://www.go-fair.org
 │
 ├── docs/
 │   ├── metadata_schema.md                      # Metadata field definitions and controlled vocabularies
-│   ├── Process_Documentation_1.0.md            # Data collection and QA methodology
+│   ├── Process_Documentation.md                # Data collection and QA methodology
 │   ├── screening_criteria.md                   # Dataset inclusion and exclusion criteria
 │   └── primary_task_classification_criteria.md # Rules for assigning task categories
 │
@@ -105,7 +105,7 @@ Datasets were identified through a **concept-based search strategy** on major da
 
 **Exclusion criteria:** proprietary or not publicly accessible datasets, and resources outside the clinical or biomedical domain. Publicly accessible datasets with limited documentation are retained so that documentation gaps can be characterized.
 
-→ Full methodology: [`docs/Process_Documentation_1.1.md`](docs/Process_Documentation_1.1.md) and [`docs/screening_criteria.md`](docs/screening_criteria.md)
+→ Full methodology: [`docs/Process_Documentation.md`](docs/Process_Documentation.md) and [`docs/screening_criteria.md`](docs/screening_criteria.md)
 
 ---
 
