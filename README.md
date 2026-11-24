@@ -25,8 +25,8 @@ The initiative was launched by the AMIA Natural Language Processing Working Grou
 
 **Related work:**
 
-- **AMIA 2026 Annual Symposium** — podium presentation of the catalog
-- **Manuscript** — describing the metadata framework, FAIR-aligned assessment, and catalog findings (in preparation)
+- **AMIA 2026 Annual Symposium** — poster presentation of the catalog
+- **Manuscript** — describing the metadata framework, FAIR-aligned assessment, and catalog findings
 - **Benchmark Paper** — a multi-site annotated dataset establishing community standards for clinical NLP evaluation (in development)
 
 ---
