@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clinical NLP Dataset Registry — AMIA NLP Working Group</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f5f2;
+    --bg2: #efecea;
+    --surface: #ffffff;
+    --surface2: #f2f0ed;
+    --border: #e0dbd5;
+    --border-light: #ede9e4;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-light: #eff4ff;
+    --green: #16a34a;
+    --green-light: #f0fdf4;
+    --green-border: #bbf7d0;
+    --red: #dc2626;
+    --red-light: #fff1f2;
+    --red-border: #fecaca;
+    --text: #1a1714;
+    --text-muted: #57534e;
+    --text-dim: #a8a29e;
+    --ink: #292524;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "DM Sans", sans-serif; font-weight: 300; min-height: 100vh; line-height: 1.6; }
+
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2.5rem; position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; height: 58px; }
+  .header-left { display: flex; align-items: center; gap: .75rem; }
+  .logo-mark { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 6px rgba(37,99,235,0.5); animation: pulse 2.5s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)} }
+  .header-title { font-family: "DM Mono", monospace; font-size: .75rem; color: var(--text-muted); letter-spacing: .04em; }
+  .header-right { display: flex; align-items: center; gap: 1rem; }
+  .header-link { font-size: .8rem; color: var(--text-dim); text-decoration: none; letter-spacing: .01em; transition: color .2s; }
+  .header-link:hover { color: var(--accent); }
+  .header-cta { font-size: .78rem; background: var(--accent); color: white; padding: .35rem .9rem; border-radius: 6px; text-decoration: none; font-weight: 500; transition: background .2s; }
+  .header-cta:hover { background: var(--accent-hover); }
+
+  .hero { background: var(--surface); border-bottom: 1px solid var(--border); padding: 3.5rem 2.5rem 3rem; }
+  .hero-inner { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 2rem; }
+  .hero-eyebrow { font-family: "DM Mono", monospace; font-size: .68rem; color: var(--accent); letter-spacing: .12em; text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+  .hero-eyebrow::before { content:""; display:inline-block; width:20px; height:1px; background:var(--accent); }
+  .hero h1 { font-family: "Lora", serif; font-size: clamp(1.8rem,3.5vw,2.6rem); line-height: 1.2; color: var(--ink); margin-bottom: 1rem; font-weight: 600; }
+  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero-desc { color: var(--text-muted); font-size: .92rem; max-width: 520px; line-height: 1.8; }
+  .hero-stats { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin-top: .5rem; }
+  .stat { display: flex; flex-direction: column; gap: 4px; padding: 0 2.5rem 0 0; }
+  .stat-num { font-family: "DM Mono", monospace; font-size: 1.6rem; font-weight: 500; color: var(--ink); line-height: 1; letter-spacing: -.01em; }
+  .stat-label { font-size: .65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .12em; font-family: "DM Mono", monospace; }
+  .stat-divider { width: 1px; height: 2.5rem; background: var(--border); margin-right: 2.5rem; flex-shrink: 0; }
+  .stat-hr { display: none; }
+
+  .controls-wrap { background: var(--surface); border-bottom: 1px solid var(--border); padding: 1.25rem 2.5rem; position: sticky; top: 58px; z-index: 90; }
+  .controls { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: .75rem; }
+  .search-row { position: relative; }
+  .search-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--text-dim); pointer-events: none; }
+  .search-icon svg { width: 15px; height: 15px; }
+  input[type="search"] { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: .65rem 1rem .65rem 2.4rem; color: var(--text); font-family: "DM Sans", sans-serif; font-size: .88rem; font-weight: 300; outline: none; transition: border-color .2s, box-shadow .2s, background .2s; }
+  input[type="search"]:focus { background: var(--surface); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.08); }
+  input[type="search"]::placeholder { color: var(--text-dim); }
+  .filter-row { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+  .filter-label { font-family: "DM Mono", monospace; font-size: .68rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: .1em; white-space: nowrap; margin-right: .2rem; }
+  select { background: var(--bg2); border: 1px solid var(--border); border-radius: 7px; padding: .4rem 1.9rem .4rem .75rem; color: var(--text-muted); font-family: "DM Sans", sans-serif; font-size: .8rem; outline: none; cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7' viewBox='0 0 11 7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%23a8a29e' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; transition: border-color .2s, color .2s; }
+  select:hover, select:focus { border-color: var(--accent); color: var(--text); outline: none; }
+  .filter-reset { background: none; border: 1px solid var(--border); border-radius: 7px; padding: .4rem .85rem; color: var(--text-dim); font-family: "DM Mono", monospace; font-size: .7rem; cursor: pointer; letter-spacing: .04em; transition: all .2s; margin-left: auto; }
+  .filter-reset:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+
+  .table-area { max-width: 1100px; margin: 0 auto; padding: 1.5rem 2.5rem 5rem; }
+  .results-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: .9rem; }
+  .results-info { font-family: "DM Mono", monospace; font-size: .7rem; color: var(--text-dim); letter-spacing: .04em; }
+  .results-info strong { color: var(--accent); font-weight: 500; }
+  .fair-note { font-size: .72rem; color: var(--text-dim); display: flex; align-items: center; gap: .4rem; }
+  .fair-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .85rem; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  thead tr { background: var(--bg2); }
+  th { font-family: "DM Mono", monospace; font-size: .63rem; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: var(--text-dim); padding: .7rem 1rem; text-align: left; cursor: pointer; white-space: nowrap; user-select: none; border-bottom: 1px solid var(--border); transition: color .15s; }
+  th:hover { color: var(--text-muted); }
+  th.sort-active { color: var(--accent); }
+  th .sort-arrow { margin-left: 4px; opacity: .35; font-size: .7rem; }
+  th.sort-active .sort-arrow { opacity: 1; }
+  tbody tr { border-bottom: 1px solid var(--border-light); transition: background .12s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: #fafaf9; }
+  td { padding: .9rem 1rem; vertical-align: middle; color: var(--text-muted); }
+  td.name-cell { min-width: 160px; max-width: 200px; word-break: break-word; white-space: normal; }
+  td.name-cell a { color: var(--accent); text-decoration: none; font-weight: 500; font-size: .875rem; display: block; }
+  td.name-cell a:hover { text-decoration: underline; }
+  td.desc-cell { color: var(--text-dim); font-size: .78rem; max-width: 220px; line-height: 1.55; }
+  .pill { display: inline-block; font-size: .72rem; padding: 2px 9px; border-radius: 99px; background: var(--accent-light); color: var(--accent); border: 1px solid #bfdbfe; white-space: nowrap; font-weight: 400; }
+  .pill.setting { background: var(--green-light); color: var(--green); border-color: var(--green-border); }
+  .badge-access { display: inline-flex; align-items: center; gap: 5px; font-family: "DM Mono", monospace; font-size: .65rem; padding: 3px 9px; border-radius: 99px; white-space: nowrap; letter-spacing: .03em; font-weight: 400; }
+  .badge-access::before { content:""; width:5px; height:5px; border-radius:50%; background:currentColor; flex-shrink:0; }
+  .badge-access.open { background: var(--green-light); border: 1px solid var(--green-border); color: var(--green); }
+  .badge-access.restricted { background: var(--red-light); border: 1px solid var(--red-border); color: var(--red); }
+  .badge-access.unclear { background: #fffbeb; border: 1px solid #fde68a; color: #b45309; }
+  .year-cell { font-family: "DM Mono", monospace; font-size: .78rem; color: var(--text-dim); }
+
+  .no-results { text-align: center; padding: 5rem 2rem; color: var(--text-dim); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  .no-results-icon { font-size: 2.5rem; margin-bottom: 1rem; opacity: .25; }
+  .no-results p { font-size: .85rem; line-height: 1.6; }
+  .no-results strong { color: var(--text-muted); }
+
+  footer { border-top: 1px solid var(--border); background: var(--surface); padding: 2rem 2.5rem; }
+  .footer-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  .footer-left { font-size: .78rem; color: var(--text-dim); line-height: 1.7; }
+  .footer-left strong { color: var(--text-muted); font-weight: 500; }
+  .footer-left a { color: var(--text-dim); text-decoration: none; }
+  .footer-left a:hover { color: var(--accent); }
+  .footer-badge { font-family: "DM Mono", monospace; font-size: .65rem; padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); letter-spacing: .06em; display: flex; align-items: center; gap: 6px; }
+  .footer-badge::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--green); }
+
+  @media (max-width: 720px) {
+    .hero-stats { gap: 1.5rem; flex-wrap: wrap; }
+    .stat-divider { display: none; }
+    .stat { padding-right: 0; }
+    .stat-num { font-size: 1.4rem; }
+    .table-area { padding: 1rem 1rem 4rem; }
+    .controls-wrap { padding: 1rem; }
+  }
+  td.pid-cell { font-family: "DM Mono", monospace; font-size: .68rem; color: var(--text-dim); max-width: 170px; word-break: break-all; }
+  td.pid-cell a { color: var(--accent); text-decoration: none; }
+  td.pid-cell a:hover { text-decoration: underline; }
+  .pid-none { color: var(--text-dim); opacity: .45; font-family: "DM Mono", monospace; font-size: .68rem; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo-mark"></div>
+    <span class="header-title">AMIA NLP Working Group · Dataset Registry</span>
+  </div>
+  <div class="header-right">
+    <a href="https://github.com/AMIANLPWG/clinical-nlp-datasets/blob/main/docs/Process_Documentation_1.0.md" target="_blank" class="header-link">Documentation</a>
+    <a href="https://github.com/AMIANLPWG/clinical-nlp-datasets/blob/main/docs/metadata_schema.md" target="_blank" class="header-link">Metadata Schema</a>
+    <a href="https://github.com/AMIANLPWG/clinical-nlp-datasets" target="_blank" class="header-cta">GitHub ↗</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="hero-inner">
+    <p class="hero-eyebrow">Clinical &amp; Biomedical NLP · FAIR-Aligned Catalog · 2026</p>
+    <h1>Find the right dataset<br>for <em>clinical NLP</em> research</h1>
+    <p class="hero-desc">A standardized, community-maintained registry of clinical and biomedical NLP datasets curated by the AMIA NLP Working Group. Each entry is documented using a 33-variable FAIR-aligned metadata framework.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">60</span><span class="stat-label">Datasets</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">33</span><span class="stat-label">Metadata Variables</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">10</span><span class="stat-label">NLP Tasks</span></div>
+      <div class="stat-divider"></div>
+      <div class="stat"><span class="stat-num">2026</span><span class="stat-label">Last Updated</span></div>
+    </div>
+  </div>
+</section>
+
+<div class="controls-wrap">
+  <div class="controls">
+    <div class="search-row">
+      <span class="search-icon">
+        <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="6.5" cy="6.5" r="4.5" stroke="#a8a29e" stroke-width="1.4"/>
+          <path d="M10 10l3.5 3.5" stroke="#a8a29e" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <input type="search" id="search" placeholder="Search by dataset name, task, source, institution…" autocomplete="off">
+    </div>
+    <div class="filter-row">
+      <span class="filter-label">Filter by</span>
+      <select id="filter-task"><option value="">All Tasks</option></select>
+      <select id="filter-setting"><option value="">All Settings</option><option value="__icu">Any ICU</option><option value="__ed">Any emergency department</option></select>
+      <select id="filter-access"><option value="">All Access Types</option></select>
+      <select id="filter-language"><option value="">All Languages</option></select>
+      <select id="filter-year"><option value="">All Years</option></select>
+      <button class="filter-reset" onclick="resetFilters()">↺ Reset filters</button>
+    </div>
+  </div>
+</div>
+
+<div class="table-area">
+  <div class="results-bar">
+    <p class="results-info">Showing <strong id="shown-count">–</strong> of <strong id="total-shown">–</strong> datasets</p>
+    <p class="fair-note"><span class="fair-dot"></span>FAIR-aligned metadata · Updated November 2026</p>
+  </div>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th onclick="sortBy('name')" id="th-name">Dataset <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('task')" id="th-task">Primary Task <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('setting')" id="th-setting">Setting <span class="sort-arrow">↕</span></th>
+            <th onclick="sortBy('language')" id="th-language">Language <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('access')" id="th-access">Access <span class="sort-arrow">↕</span></th>
+          <th onclick="sortBy('year')" id="th-year">Year <span class="sort-arrow">↕</span></th>
+        <th onclick="sortBy('pid')" id="th-pid">PID / DOI <span class="sort-arrow">↕</span></th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+    <div id="no-results" class="no-results" style="display:none">
+      <div class="no-results-icon">◎</div>
+      <p>No datasets match your current filters.<br><strong>Try adjusting the search or clearing the filters.</strong></p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">
+      <strong>AMIA NLP Working Group · Clinical NLP Dataset Registry</strong><br>
+      Maintained by AMIA NLP Working Group contributors from multiple institutions.<br>
+      <a href="https://github.com/AMIANLPWG/clinical-nlp-datasets/blob/main/docs/Process_Documentation_1.0.md" target="_blank">Documentation</a> ·
+      <a href="https://github.com/AMIANLPWG/clinical-nlp-datasets/blob/main/docs/metadata_schema.md" target="_blank">Metadata Schema</a> ·
+      <a href="https://github.com/AMIANLPWG/clinical-nlp-datasets" target="_blank">GitHub repository</a>
+    </div>
+    <div class="footer-badge">Community Maintained · Open Science</div>
+  </div>
+</footer>
+
+<script>
+const datasets = [{"name": "MIMIC-III", "url": "https://physionet.org/content/mimiciii/1.4/", "task": "Multiple tasks", "setting": "ICU", "icu": true, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2016, "pid": "10.13026/C2XW26", "pidlink": "https://doi.org/10.13026/C2XW26", "kw": "MIMIC-III Intensive Care Unit (ICU) / Critical Care Discharge summaries, nursing notes, physician notes, radiology reports, ECG reports Demographics, vital signs (hourly), laboratory test results, procedures, medications, mortality, de-identification MIT Lab for Computational Physiology, Beth Israel Deaconess Medical Center, PhysioNet"}, {"name": "MIMIC-IV", "url": "https://physionet.org/content/mimiciv/3.1/", "task": "Multiple tasks", "setting": "ICU + emergency department", "icu": true, "ed": true, "language": "English", "langcat": "English", "access": "Restricted", "year": 2023, "pid": "10.13026/kpb9-mt58", "pidlink": "https://doi.org/10.13026/kpb9-mt58", "kw": "MIMIC-IV ICU / Emergency Department / Hospital-wide Discharge summaries, radiology reports, ECG reports, ED notes Demographics, vital signs, laboratory results, medications, procedures, diagnoses MIT Lab for Computational Physiology, Beth Israel Deaconess Medical Center, PhysioNet"}, {"name": "n2c2 2018 - Cohort Selection", "url": "https://portal.dbmi.hms.harvard.edu/projects/n2c2-2018-t1/", "task": "Cohort selection", "setting": "Multiple clinical settings", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2019, "pid": "10.1093/jamia/ocz163", "pidlink": "https://doi.org/10.1093/jamia/ocz163", "kw": "n2c2 2018 Track 1 Clinical trials / EHR clinical narratives Clinical narratives, discharge summaries, longitudinal medical records Cohort selection, clinical trial eligibility criteria matching (Met/Not Met/Possibly Met), concept extraction, temporal reasoning, inference Partners HealthCare, Harvard Medical School DBMI, UMass Lowell"}, {"name": "n2c2 2019 - Concept Normalization", "url": "https://n2c2.dbmi.hms.harvard.edu/2019-track-3", "task": "Entity normalization / grounding", "setting": "Inpatient", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2020, "pid": "10.1093/jamia/ocaa106", "pidlink": "https://doi.org/10.1093/jamia/ocaa106", "kw": "n2c2 2019 Track 3 Clinical concept normalization / Medical records Discharge summaries Named Entity Normalization (NEN), linking medical concepts (problems, treatments, tests) to UMLS CUIs UMass Lowell, Mayo Clinic (OHNLP), George Mason University, Harvard Medical School DBMI"}, {"name": "RadGraph-XL", "url": "https://physionet.org/content/radgraph-xl/1.0.0/", "task": "Multiple tasks", "setting": "ICU + inpatient", "icu": true, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2024, "pid": "10.13026/j8e7-pr22", "pidlink": "https://doi.org/10.13026/j8e7-pr22", "kw": "RadGraph-XL Radiology / Medical imaging Radiology reports (impressions and findings) Entity extraction, relation extraction, clinical entity and relation annotation Stanford University, Stanford Center for Artificial Intelligence in Medicine & Imaging (AIMI), PhysioNet"}, {"name": "BioASQ", "url": "https://participants-area.bioasq.org/datasets/", "task": "Question answering", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English, Spanish", "langcat": "Multilingual", "access": "Open", "year": 2015, "pid": "", "pidlink": "", "kw": "BioASQ Biomedical literature / Question answering PubMed articles, abstracts, biomedical questions Task a: Semantic indexing (MeSH term assignment); Task b: Question answering (yes/no, factoid, list, summary); Document retrieval, snippet retrieval, concept identification National Center for Scientific Research Demokritos (Greece), Harvard Medical School DBMI, National Library of Medicine (NLM)"}, {"name": "PubMedQA", "url": "https://pubmedqa.github.io/", "task": "Question answering", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2019, "pid": "10.18653/v1/D19-1259", "pidlink": "https://doi.org/10.18653/v1/D19-1259", "kw": "PubMedQA Biomedical research / Question answering PubMed abstracts Yes/No/Maybe question answering; Reasoning over biomedical text including quantitative content University of Pittsburgh, Carnegie Mellon University, Google AI"}, {"name": "BC5CDR", "url": "http://www.biocreative.org/tasks/biocreative-v/track-3-cdr/", "task": "Multiple tasks", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2016, "pid": "10.1093/database/baw068", "pidlink": "https://doi.org/10.1093/database/baw068", "kw": "BC5CDR Toxicogenomics / Chemical-disease relations PubMed abstracts and titles Named Entity Recognition (DNER - disease NER, chemical NER); Relation Extraction (Chemical-Induced Disease relations); Entity normalization to MeSH National Center for Biotechnology Information (NCBI/NLM), Comparative Toxicogenomics Database (CTD), North Carolina State University"}, {"name": "PMC-Patients", "url": "https://pmc-patients.github.io/", "task": "Multiple tasks", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2023, "pid": "10.1038/s41597-023-02814-8", "pidlink": "https://doi.org/10.1038/s41597-023-02814-8", "kw": "PMC-Patients Clinical decision support / Patient case reports Patient summaries extracted from case reports in PubMed Central Patient summary extraction; Patient-to-Article Retrieval (PAR); Patient-to-Patient Retrieval (PPR); Clinical decision support National Library of Medicine (NLM), NIH; University of Pittsburgh"}, {"name": "CADEC", "url": "https://data.csiro.au/", "task": "Named entity recognition", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2015, "pid": "10.1016/j.jbi.2015.03.010", "pidlink": "https://doi.org/10.1016/j.jbi.2015.03.010", "kw": "CADEC Pharmacovigilance / Adverse drug events / Social media Medical forum posts from social media (AskaPatient.com) Named Entity Recognition (drugs, adverse effects, diseases, symptoms, findings); Entity normalization to SNOMED CT and MedDRA CSIRO (Commonwealth Scientific and Industrial Research Organisation), Australia"}, {"name": "MedMentions", "url": "https://github.com/chanzuckerberg/MedMentions", "task": "Named entity recognition", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2019, "pid": "10.48550/arXiv.1902.09476", "pidlink": "https://doi.org/10.48550/arXiv.1902.09476", "kw": "MedMentions Biomedical concept recognition / Entity linking PubMed abstracts (titles and abstracts) Named Entity Recognition and Linking (NERL) to UMLS; Exhaustive annotation of all UMLS 2017AA entity mentions; Semantic type identification Chan Zuckerberg Initiative (CZI) Meta; University of Pittsburgh; Carnegie Mellon University"}, {"name": "ChemProt (BioCreative VI)", "url": "https://huggingface.co/datasets/bigbio/chemprot", "task": "Classification / similarity", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2017, "pid": "10.1093/database/bay073", "pidlink": "https://doi.org/10.1093/database/bay073", "kw": "ChemProt, BC6-ChemProt Chemical-protein interactions / Drug-protein relations PubMed abstracts Chemical-Protein Interaction (CPI) extraction; Named entities provided; Relation classification into 10 CPR groups (5 evaluated: CPR:3, CPR:4, CPR:5, CPR:6, CPR:9) Barcelona Supercomputing Center (BSC), Spanish National Bioinformatics Institute (INB)"}, {"name": "CRAFT Corpus", "url": "http://bionlp-corpora.sourceforge.net/CRAFT/", "task": "Coreference resolution", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2012, "pid": "10.1186/1471-2105-13-161", "pidlink": "https://doi.org/10.1186/1471-2105-13-161", "kw": "CRAFT Multi-modal biomedical corpus / Full-text annotation Full-text open-access biomedical journal articles Multi-model annotation: Concept annotation (9 ontologies), Syntactic annotation (Penn Treebank), Coreference resolution, Sentence segmentation, Tokenization, POS tagging University of Colorado Anschutz Medical Campus, University of Melbourne, Mouse Genome Informatics (Jackson Laboratory)"}, {"name": "RadQA", "url": "https://physionet.org/content/radqa/1.0.0/", "task": "Question answering", "setting": "ICU", "icu": true, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2022, "pid": "10.13026/ckkp-6y19", "pidlink": "https://doi.org/10.13026/ckkp-6y19", "kw": "RadQA Radiology reports Free‑text radiology reports (diagnostic imaging reports) from MIMIC‑III Machine Reading Comprehension / extractive QA University of Texas Health Science Center at Houston"}, {"name": "COVID-19 Open Research Dataset", "url": "https://github.com/allenai/cord19?tab=readme-ov-file", "task": "Multiple tasks", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2020, "pid": "10.18653/v1/2020.nlpcovid19-acl.1", "pidlink": "https://doi.org/10.18653/v1/2020.nlpcovid19-acl.1", "kw": "CORD-19 Biomedical literature research articles no for this data itself, but annotated with QA, entailment, claim verification, etc in other studies using CORD-19 Allen Institute for AI"}, {"name": "EBM-NLP", "url": "https://github.com/bepnye/EBM-NLP", "task": "Named entity recognition", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2018, "pid": "10.18653/v1/P18-1019", "pidlink": "https://doi.org/10.18653/v1/P18-1019", "kw": "EBM-NLP Evidenced-Based Medicine, Medical Literature PubMed /MEDLINE title abstract metadata Span-level annotations marking text describing PICO elements Northeastern university "}, {"name": "MEDIQA 2021", "url": "https://github.com/abachaa/MEDIQA2021", "task": "Summarization", "setting": "Clinical, setting unspecified", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2021, "pid": "10.18653/v1/2021.bionlp-1.8", "pidlink": "https://doi.org/10.18653/v1/2021.bionlp-1.8", "kw": "MEDIQA 2021 Medical text summarization / Medical NLP Medical notes, questions, answers, radiology reports Summaries (reference and system-generated), Evaluation metrics NAACL-BioNLP 2021 / National Library of Medicine (NLM)"}, {"name": "eICU Collaborative Research Database", "url": "https://physionet.org/content/eicu-crd/2.0/", "task": "Multiple tasks", "setting": "ICU + inpatient", "icu": true, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2019, "pid": "10.13026/C2WM1R", "pidlink": "https://doi.org/10.13026/C2WM1R", "kw": "eICU-CRD Intensive Care / Critical Care Vital signs, medications, care plans, diagnoses, laboratory values, procedures Structured data entry; APACHE IV diagnosis system; Hierarchical diagnosis and treatment coding MIT Laboratory for Computational Physiology; Philips eICU Research Institute"}, {"name": "MIMIC-CXR", "url": "https://physionet.org/content/mimic-cxr/2.1.0/", "task": "Summarization", "setting": "Emergency department", "icu": false, "ed": true, "language": "English", "langcat": "English", "access": "Restricted", "year": 2019, "pid": "10.13026/4jqj-jw95", "pidlink": "https://doi.org/10.13026/4jqj-jw95", "kw": "MIMIC‑CXR Radiology – chest radiography (chest X‑ray imaging) Semi‑structured free‑text chest radiology reports, one per imaging study No manual linguistic annotations (no entity, relation, temporal, or assertion labels). Only de‑identification markings (PHI replaced by ___) and semi‑structured headings Beth Israel Deaconess Medical Center (BIDMC)"}, {"name": "RadGraph", "url": "https://github.com/Stanford-AIMI/radgraph", "task": "Multiple tasks", "setting": "ICU + inpatient", "icu": true, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2021, "pid": "10.13026/hm87-5p47", "pidlink": "https://doi.org/10.13026/hm87-5p47", "kw": "RadGraph Radiology / Chest X-ray radiology reports / Medical imaging Full-text chest X-ray radiology reports (primarily Findings and Impression sections) NER: 4 entity types Relation Extraction: 3 relation types (directed edges between entities) End-to-end entity and relation extraction: Joint task requiring correct entity boundaries, entity types, and relation types Hosting: PhysioNet (MIT Labora"}, {"name": "Bridge2AI-Voice v1.0", "url": "https://physionet.org/news/post/bridge2ai-voice", "task": "Multiple tasks", "setting": "Multiple clinical settings", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2025, "pid": "10.13026/37yb-1t42", "pidlink": "https://doi.org/10.13026/37yb-1t42", "kw": "Bridge2AI-Voice Voice and Speech Disorders / Biomarkers of Health Voice recordings; Derived acoustic features (spectrograms, MFCCs); Clinical questionnaire data Voice recordings; Acoustic features; Demographic and clinical data Multiple institutions across five North American sites; NIH Bridge2AI initiative"}, {"name": "MeDiSumQA", "url": "https://physionet.org/content/medisumqa/1.0.0/", "task": "Question answering", "setting": "Clinical, setting unspecified", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2025, "pid": "10.13026/f566-h049", "pidlink": "https://doi.org/10.13026/f566-h049", "kw": "MeDiSumQA Medical text summarization / Question answering / Patient education Discharge summaries Question-Answer pairs; note_id, question, answer, discharge_summary Institute for AI in Medicine (IKIM), University Hospital Essen (Universitätsklinikum Essen), Germany"}, {"name": "BRAX (Brazilian Chest X-ray)", "url": "https://physionet.org/content/brax/1.1.0/", "task": "Multiple tasks", "setting": "Inpatient", "icu": false, "ed": false, "language": "English, Portuguese", "langcat": "Multilingual", "access": "Restricted", "year": 2022, "pid": "10.13026/grwk-yh18", "pidlink": "https://doi.org/10.13026/grwk-yh18", "kw": "BRAX Radiology / Medical imaging Chest X-ray images Image labels; 14 labels: No Finding, Enlarged Cardiomediastinum, Cardiomegaly, Lung Lesion, Lung Opacity, Edema, Consolidation, Pneumonia, Atelectasis, Pneumothorax, Pleural Effusion, Pleural Other, Fracture, Support Devices Hospital Israelita Albert Einstein (HIAE); PhysioNet"}, {"name": "ODD (Opioid Detection Dataset)", "url": "https://physionet.org/content/nlp-opioid-behavior-detection/1.0.0/", "task": "Classification / similarity", "setting": "Emergency department", "icu": false, "ed": true, "language": "English", "langcat": "English", "access": "Restricted", "year": 2024, "pid": "10.13026/qrje-z188", "pidlink": "https://doi.org/10.13026/qrje-z188", "kw": "ODD Opioid use, opioid‑related aberrant behaviors (ORABs), substance use / addiction medicine EHR notes Sentence‑level, multi‑label classification UMass Amherst, UMass Lowell, VA, Yale, Microsoft, UMass Chan"}, {"name": "PADS (Parkinson's Disease Smartwatch)", "url": "https://physionet.org/content/parkinsons-disease-smartwatch/1.0.0/", "task": "Multiple tasks", "setting": "Outpatient", "icu": false, "ed": false, "language": "English, German", "langcat": "Multilingual", "access": "Restricted", "year": 2024, "pid": "10.13026/m0w9-zx22", "pidlink": "https://doi.org/10.13026/m0w9-zx22", "kw": "PADS Movement Disorders / Parkinsons Disease Smartwatch sensor data (wearable) Smartwatch sensor data (acceleration and rotation); 11 movement tasks: Resting, Postural, Kinetic; Parkinson's disease symptoms and non-motor symptoms University Hospital Münster (Department of Neurology); PhysioNet"}, {"name": "MTSamples", "url": "https://www.kaggle.com/datasets/tboyle10/medicaltranscriptions", "task": "Multiple tasks", "setting": "Synthetic / sample", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2017, "pid": "https://www.kaggle.com/datasets/tboyle10/medicaltranscriptions", "pidlink": "https://www.kaggle.com/datasets/tboyle10/medicaltranscriptions", "kw": "MTSamples General Medicine / Multi-specialty Transcribed medical reports / Sample clinical notes Text classification by medical specialty mtsamples.com"}, {"name": "George B. Moody Challenge 2023", "url": "https://moody-challenge.physionet.org/2023/", "task": "Multiple tasks", "setting": "ICU", "icu": true, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2023, "pid": "10.13026/976s-6619", "pidlink": "https://doi.org/10.13026/976s-6619", "kw": "PhysioNet Challenge 2023 Cardiology / Neurology / Critical Care Physiological signals and Clinical metadata Outcome labels: CPC (Cerebral Performance Category) score at 3-6 months PhysioNet / Massachusetts Institute of Technology (MIT)"}, {"name": "George B. Moody Challenge 2022", "url": "https://moody-challenge.physionet.org/2022/", "task": "Multiple tasks", "setting": "Community screening", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2023, "pid": "10.13026/t49p-5v35", "pidlink": "https://doi.org/10.13026/t49p-5v35", "kw": "PhysioNet Challenge 2022 / CirCor DigiScope Cardiology / Pediatric Medicine Phonocardiogram (PCG) heart sound recordings Murmur presence (Present/Absent/Unknown) and Clinical Outcome (Normal/Abnormal) PhysioNet / Universidade Portucalense / Universidade do Porto"}, {"name": "Medical Expert Annotations (LLM Hallucinations)", "url": "https://physionet.org/content/ann-pt-summ/1.0.1/", "task": "Multiple tasks", "setting": "Inpatient", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2024, "pid": "10.13026/782p-p614", "pidlink": "https://doi.org/10.13026/782p-p614", "kw": "N/A Medical Summarization / NLP Safety Patient discharge instructions and summarie Token-level annotation of unsupported, contradicted, or incorrect facts PhysioNet / MIT / University of Münster"}, {"name": "Medication Extraction Labels (MIMIC-IV-Note)", "url": "https://physionet.org/content/medication-labels-mimic-note/1.0.0/", "task": "Named entity recognition", "setting": "Inpatient", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2023, "pid": "10.13026/ps1s-ab29", "pidlink": "https://doi.org/10.13026/ps1s-ab29", "kw": "MIMIC-IV-Medication Pharmacotherapy / Clinical NLP Clinical notes (Discharge Summaries) Named Entity Recognition (NER) for medication entities PhysioNet (hosting)"}, {"name": "Social Determinants of Health (MIMIC-III)", "url": "https://physionet.org/content/annotation-dataset-sdoh/1.0.1/", "task": "Classification / similarity", "setting": "ICU", "icu": true, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2024, "pid": "10.13026/qk2y-wx30", "pidlink": "https://doi.org/10.13026/qk2y-wx30", "kw": "SDoH-MIMIC / annotation-dataset-sdoh Public Health / Clinical NLP Clinical notes (Physician, Social Worker, and Nurse notes) Sentence-level classification of SDoH mentions and adversity PhysioNet / Harvard Medical School / MIT"}, {"name": "Temporal Respiratory Support Dataset", "url": "https://physionet.org/content/temporal-respiratory-support/", "task": "Multiple tasks", "setting": "ICU", "icu": true, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2024, "pid": "10.13026/8n2e-6e23", "pidlink": "https://doi.org/10.13026/8n2e-6e23", "kw": "Resp-Support-Temp Pulmonology / Critical Care / Clinical NLP Clinical notes (Physician and Nursing notes) Temporal Information Extraction (Event and Time expression extraction) PhysioNet / MIT / University of Münster"}, {"name": "ArchEHR-QA", "url": "https://physionet.org/content/archehr-qa-bionlp-task-2025/1.3/", "task": "Question answering", "setting": "ICU + emergency department", "icu": true, "ed": true, "language": "English", "langcat": "English", "access": "Restricted", "year": 2026, "pid": "10.13026/n708-sn25", "pidlink": "https://doi.org/10.13026/n708-sn25", "kw": "ArchEHR-QA Clinical NLP / Reasoning Clinical note excerpts paired with patient questions (from public health forums) and clinician-interpreted questions Question answering with grounded answers: sentence-level relevance labels (essential / supplementary / not relevant), clinician-authored answers citing note sentences PhysioNet / BioNLP Workshop"}, {"name": "NCBI Disease", "url": "https://huggingface.co/datasets/ncbi/ncbi_disease", "task": "Named entity recognition", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2014, "pid": "10.1016/j.jbi.2013.12.006", "pidlink": "https://doi.org/10.1016/j.jbi.2013.12.006", "kw": "NCBI-disease Biomedical Literature / Clinical Genetics PubMed Abstracts Named Entity Recognition (NER) and Concept Normalization National Center for Biotechnology Information (NCBI) / NIH"}, {"name": "MedNLI", "url": "https://physionet.org/content/mednli/1.0.0/", "task": "Natural language inference", "setting": "ICU", "icu": true, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2018, "pid": "10.13026/C2RS98", "pidlink": "https://doi.org/10.13026/C2RS98", "kw": "MedNLI Clinical NLP / Natural Language Inference Clinical notes (MIMIC-III) Natural Language Inference (Entailment, Contradiction, Neutral) PhysioNet / MIT / IBM Watson Health"}, {"name": "MedSTS", "url": "https://n2c2.dbmi.hms.harvard.edu/2019-track-1", "task": "Classification / similarity", "setting": "Clinical, setting unspecified", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2020, "pid": "10.48550/arXiv.1808.09397", "pidlink": "https://doi.org/10.48550/arXiv.1808.09397", "kw": "MedSTS Clinical NLP / Semantic Similarity Clinical notes (Mayo Clinic) Semantic Textual Similarity (STS) scoring Mayo Clinic / OHNLP (Open Health Natural Language Processing)"}, {"name": "CARMEN-I", "url": "https://physionet.org/content/carmen-i/1.0.1/", "task": "De-identification", "setting": "Inpatient", "icu": false, "ed": false, "language": "Spanish, Catalan", "langcat": "Multilingual", "access": "Restricted", "year": 2024, "pid": "10.13026/x7ed-9r91", "pidlink": "https://doi.org/10.13026/x7ed-9r91", "kw": "CARMEN-I General Medicine / De-identification Clinical notes / Medical reports De-identification (PHI masking) and Named Entity Recognition (NER) Barcelona Supercomputing Center (BSC) / PhysioNet"}, {"name": "ClinText-SP & RigoBERTa", "url": "https://huggingface.co/PlanTL-GOB-ES", "task": "Multiple tasks", "setting": "Inpatient", "icu": false, "ed": false, "language": "Spanish", "langcat": "Spanish", "access": "Restricted", "year": 2025, "pid": "10.48550/arXiv.2503.18594", "pidlink": "https://doi.org/10.48550/arXiv.2503.18594", "kw": "ClinText-SP General Medicine / Clinical NLP Clinical Notes, Discharge Summaries, Medical Reports Pre-training (Self-supervised) and Downstream NER/Classification Barcelona Supercomputing Center (BSC)"}, {"name": "OpenMed NER", "url": "https://huggingface.co/OpenMed", "task": "Named entity recognition", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2025, "pid": "10.48550/arXiv.2508.01630", "pidlink": "https://doi.org/10.48550/arXiv.2508.01630", "kw": "OpenMed NER Biomedical NLP / Named Entity Recognition (NER) 350k-passage corpus (PubMed, arXiv, and MIMIC-III) Multi-domain NER (Token Classification) OpenMed / Hugging Face / GitHub"}, {"name": "MedJ / MedJEx", "url": "https://github.com/MozziTasteBitter/MedJEx", "task": "Named entity recognition", "setting": "Inpatient", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "License unclear", "year": 2022, "pid": "10.48550/arXiv.2210.05875", "pidlink": "https://doi.org/10.48550/arXiv.2210.05875", "kw": "MedJ Clinical NLP / Patient Education / Text Simplification De-identified EHR note sentences Jargon Extraction (Named Entity Recognition / Sequence Labeling) University of Massachusetts Lowell / UPMC"}, {"name": "Biomed-Enriched", "url": "https://huggingface.co/datasets/almanach/Biomed-Enriched", "task": "Entity normalization / grounding", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2025, "pid": "10.48550/arXiv.2506.20331", "pidlink": "https://doi.org/10.48550/arXiv.2506.20331", "kw": "Biomed-Enriched Biomedical NLP / Knowledge Graph Integration Scientific abstracts and clinical case reports Entity Linking (EL) and Knowledge Graph Grounding Sorbonne Université / INRIA Paris"}, {"name": "Semantic similarity and relatedness", "url": "https://conservancy.umn.edu/items/74708665-a6b6-4f06-8f1a-c39ca8839f7a", "task": "Classification / similarity", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2010, "pid": "10.13020/D6CX04", "pidlink": "https://doi.org/10.13020/D6CX04", "kw": "UMNSRS Clinical NLP / Lexical Semantics Word pairs (Concepts) extracted from UMLS Semantic Similarity and Semantic Relatedness scoring University of Minnesota / Mayo Clinic"}, {"name": "sense disambiguation repository", "url": "https://lhncbc.nlm.nih.gov/ii/tools/MetaMap/additional-tools/WSDServer.html", "task": "Multiple tasks", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2011, "pid": "10.1186/1471-2105-12-223", "pidlink": "https://doi.org/10.1186/1471-2105-12-223", "kw": "MSH WSD / NLM WSD Biomedical NLP / Word Sense Disambiguation / Lexical Semantics PubMed/MEDLINE abstracts Word Sense Disambiguation - Assigning correct UMLS CUI (Concept Unique Identifier) to ambiguous terms National Library of Medicine (NLM) / University of Minnesota / Mayo Clinic"}, {"name": "EchoGraph-annotated ECHO-NOTE2NUM Examples", "url": "https://physionet.org/content/echograph-note2num-annotations/1.0.0/", "task": "Multiple tasks", "setting": "ICU", "icu": true, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2025, "pid": "10.13026/2h1h-9n57", "pidlink": "https://doi.org/10.13026/2h1h-9n57", "kw": "EchoGraph-ECHO-NOTE2NUM Cardiology/Echocardiography Echocardiography reports (interpretation sections) Named Entity Recognition (NER) and Relation Extraction PhysioNet / Mayo Clinic / Beth Israel Deaconess Medical Center"}, {"name": "MS-CXR", "url": "https://physionet.org/content/ms-cxr/1.1.0/", "task": "Entity normalization / grounding", "setting": "Specialty department", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2022, "pid": "10.13026/ms5s-2a34", "pidlink": "https://doi.org/10.13026/ms5s-2a34", "kw": "MS-CXR Radiology / Chest X-ray Chest X-ray images with bounding box annotations and radiology text descriptions Phrase grounding: bounding box + sentence pairs for 8 pathologies (atelectasis, cardiomegaly, consolidation, edema, lung opacity, pleural effusion, pneumonia, pneumothorax) Microsoft Research; PhysioNet"}, {"name": "MS-CXR-T", "url": "https://physionet.org/content/ms-cxr-t/1.0.0/", "task": "Multiple tasks", "setting": "Specialty department", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2023, "pid": "10.13026/pg10-j984", "pidlink": "https://doi.org/10.13026/pg10-j984", "kw": "MS-CXR-T Biomedical NLP/Imaging X-rays, sentences class label for each image- and sentence-pair PhysioNet"}, {"name": "CXRGraph", "url": "https://physionet.org/content/cxrgraph/1.0.0/", "task": "Multiple tasks", "setting": "Specialty department", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2024, "pid": "10.13026/p7kf-t860", "pidlink": "https://doi.org/10.13026/p7kf-t860", "kw": "CXRGraph Radiology / Chest X-ray / NLP Structured radiology reports following RadGraph format Named entity recognition (5 entity types), relation extraction (4 relation types), entity attribute recognition (3 attributes including abnormality and prior reference handling) PhysioNet (authors affiliated with Cardiff University based on publication)"}, {"name": "Tasks 1 and 3 from Progress Note Understanding Suite of Tasks: SOAP Note Tagging and Problem List Summarization", "url": "https://physionet.org/content/task-1-3-soap-note-tag/1.0.0/", "task": "Multiple tasks", "setting": "ICU", "icu": true, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2022, "pid": "10.13026/wks0-w041", "pidlink": "https://doi.org/10.13026/wks0-w041", "kw": "SOAP Note Tasks 1&3 Clinical NLP / Critical Care ICU progress notes Task 1: SOAP section tagging (sequence labeling); Task 3: Problem list summarization (diagnosis extraction from Plan section) University of Wisconsin; PhysioNet"}, {"name": "PIFIR: PET-CT Invasive Fungal Infection Reports", "url": "https://physionet.org/content/pifir/1.0.0/", "task": "Multiple tasks", "setting": "Specialty department", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2025, "pid": "10.13026/d51v-j343", "pidlink": "https://doi.org/10.13026/d51v-j343", "kw": "PIFIR Radiology / Infectious Disease PET-CT imaging reports Named entity recognition (IFI-related concepts, certainty cues) and relation extraction Peter MacCallum Cancer Centre, Melbourne, Australia; University of Melbourne; PhysioNet"}, {"name": "CHIFIR", "url": "https://physionet.org/content/corpus-fungal-infections/1.0.2/", "task": "Multiple tasks", "setting": "Specialty department", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Restricted", "year": 2023, "pid": "10.13026/m1rk-ns13", "pidlink": "https://doi.org/10.13026/m1rk-ns13", "kw": "CHIFIR Pathology / Infectious Disease Cytology and histopathology reports Named entity recognition (IFI-specific concepts, certainty cues) and relation extraction Peter MacCallum Cancer Centre, Melbourne, Australia; University of Melbourne; PhysioNet"}, {"name": "Synthetic Mention Corpora for Disease Entity Recognition and Normalization", "url": "https://physionet.org/content/synthetic-mention-corpora/1.0.0/", "task": "Multiple tasks", "setting": "Synthetic / sample", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2024, "pid": "10.13026/p5pn-ty93", "pidlink": "https://doi.org/10.13026/p5pn-ty93", "kw": "Synthetic Mention Corpora General Medicine Synthetic disease mention text snippets named entity (disease mentions) MIT, PhysioNet"}, {"name": "Sadaftb/clinical-nlp-dataset-raw", "url": "https://huggingface.co/datasets/Sadaftb/clinical-nlp-dataset-raw", "task": "Multiple tasks", "setting": "Undocumented", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "License unclear", "year": 0, "pid": "", "pidlink": "", "kw": "clinical-nlp-dataset-raw Clinical NLP Patient-note style clinical text (from data preview; not documented by the uploader) Character-span annotations (from data preview; not documented by the uploader); label set not documented Individual contributor / HuggingFace"}, {"name": "NCATS-EpiSet4", "url": "https://huggingface.co/datasets/ncats/EpiSet4NER-v2", "task": "Named entity recognition", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "License unclear", "year": 2023, "pid": "", "pidlink": "", "kw": "EpiSet4NER-v2 biomedical literature PubMed abstracts Token-level NER National Center for Advancing Translational Sciences (NCATS), National Institutes of Health (NIH)"}, {"name": "dylanmontoya22/bioBERT-ner-biomedical-text", "url": "https://huggingface.co/datasets/dylanmontoya22/bioBERT-ner-biomedical-text", "task": "Named entity recognition", "setting": "Undocumented", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "License unclear", "year": 2020, "pid": "", "pidlink": "", "kw": "bioBERT-ner-biomedical-text Biomedical NLP / NER (inferred from name) Likely biomedical text for NER (inferred from name; undocumented) Likely token-level NER for biomedical entities (inferred from name referencing BioBERT NER) Individual contributor / HuggingFace"}, {"name": "nlp-guild/medical-data", "url": "https://huggingface.co/datasets/nlp-guild/medical-data", "task": "Multiple tasks", "setting": "Non-clinical", "icu": false, "ed": false, "language": "Chinese", "langcat": "Chinese", "access": "Open", "year": 0, "pid": "", "pidlink": "", "kw": "medical-data General Medicine / Medical Knowledge Base Structured medical knowledge entries (disease records) Structured medical knowledge: disease name, symptoms, causes, prevention, treatment, department, cost NLP Guild / HuggingFace"}, {"name": "ahmedabdelwahed/Medical_papers_title_and_abstract_NLP_dataset", "url": "https://huggingface.co/datasets/ahmedabdelwahed/Medical_papers_title_and_abstract_NLP_dataset", "task": "Multiple tasks", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "License unclear", "year": 0, "pid": "", "pidlink": "", "kw": "Medical_papers_title_and_abstract medical literature/abstracts Medical paper titles and abstracts (likely from PubMed or similar sources) Title and abstract text pairs individual"}, {"name": "upayan2003/MedicalNLPDataset", "url": "https://huggingface.co/datasets/upayan2003/MedicalNLPDataset", "task": "Multiple tasks", "setting": "Synthetic / sample", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "License unclear", "year": 0, "pid": "", "pidlink": "", "kw": "MedicalNLPDataset General medicine Simulated/synthetic clinical questions and answers Simulated clinical questions and answers individual"}, {"name": "NLP-FBK/medical-wikipedia-english", "url": "https://huggingface.co/datasets/NLP-FBK/medical-wikipedia-english", "task": "Multiple tasks", "setting": "Non-clinical", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "Open", "year": 2025, "pid": "", "pidlink": "", "kw": "medical-wikipedia-english General Medicine / Medical Knowledge Wikipedia medical articles Raw text (no specific annotation) NLP Research group"}, {"name": "NLP-FBK/multilingual-medical-reasoning-traces", "url": "https://huggingface.co/datasets/NLP-FBK/multilingual-medical-reasoning-traces", "task": "Question answering", "setting": "Non-clinical", "icu": false, "ed": false, "language": "Italian, English, Spanish", "langcat": "Multilingual", "access": "License unclear", "year": 2025, "pid": "", "pidlink": "", "kw": "multilingual-medical-reasoning-traces Clinical NLP/General medicine Traces to medical Q&A Multiple choice QA with reasoning traces; dense retrieval of supporting medical knowledge chunks NLP Research group"}, {"name": "Savindu9x/clinical-entity-extraction-dataset", "url": "https://huggingface.co/datasets/Savindu9x/clinical-entity-extraction-dataset", "task": "Named entity recognition", "setting": "Undocumented", "icu": false, "ed": false, "language": "English", "langcat": "English", "access": "License unclear", "year": 0, "pid": "", "pidlink": "", "kw": "clinical-entity-extraction-dataset Clinical NLP / Entity Extraction (inferred from name) Likely clinical text (inferred from name; undocumented) Entity extraction (inferred from name) Individual contributor / HuggingFace"}];
+
+let sortKey = "year", sortDir = -1;
+
+function fillSelect(id, values) { const sel=document.getElementById(id); values.forEach(v=>{ const o=document.createElement("option"); o.value=v; o.textContent=v; sel.appendChild(o); }); }
+const countSort = key => [...new Set(datasets.map(d=>d[key]))].sort((a,b)=>datasets.filter(d=>d[key]===b).length-datasets.filter(d=>d[key]===a).length || String(a).localeCompare(String(b)));
+fillSelect("filter-task", countSort("task"));
+fillSelect("filter-setting", countSort("setting"));
+fillSelect("filter-access", ["Restricted","Open","License unclear"]);
+fillSelect("filter-language", ["English","Multilingual","Spanish","Chinese"]);
+const years = [...new Set(datasets.map(d=>d.year).filter(y=>y>0))].sort((a,b)=>b-a);
+fillSelect("filter-year", years);
+(function(){ const o=document.createElement("option"); o.value="0"; o.textContent="Not documented"; document.getElementById("filter-year").appendChild(o); })();
+
+function render() {
+  const q = document.getElementById("search").value.toLowerCase();
+  const task = document.getElementById("filter-task").value;
+  const setting = document.getElementById("filter-setting").value;
+  const access = document.getElementById("filter-access").value;
+  const language = document.getElementById("filter-language").value;
+  const year = document.getElementById("filter-year").value;
+
+  let filtered = datasets.filter(d => {
+    if (q && !`${d.name} ${d.task} ${d.setting} ${d.language} ${d.access} ${d.pid} ${d.kw}`.toLowerCase().includes(q)) return false;
+    if (task && d.task !== task) return false;
+    if (setting === "__icu" ? !d.icu : setting === "__ed" ? !d.ed : (setting && d.setting !== setting)) return false;
+    if (access && d.access !== access) return false;
+    if (language && d.langcat !== language) return false;
+    if (year !== "" && d.year !== parseInt(year)) return false;
+    return true;
+  });
+
+  filtered.sort((a,b) => {
+    const complete = d => (d.year > 0 ? 1 : 0) + (d.pid ? 1 : 0);
+    const ca = complete(a), cb = complete(b);
+    if (ca !== cb) return cb - ca;
+    let va=a[sortKey], vb=b[sortKey];
+    if (typeof va==="string") return sortDir*va.localeCompare(vb);
+    return sortDir*(va-vb);
+  });
+
+  const tbody = document.getElementById("table-body");
+  const noRes = document.getElementById("no-results");
+
+  if (filtered.length===0) { tbody.innerHTML=""; noRes.style.display="block"; }
+  else {
+    noRes.style.display="none";
+    tbody.innerHTML = filtered.map(d => `
+      <tr>
+        <td class="name-cell"><a href="${d.url}" target="_blank" rel="noopener">${d.name}</a></td>
+        <td><span class="pill">${d.task}</span></td>
+        <td><span class="pill setting">${d.setting}</span></td>
+        <td>${d.language}</td>
+        <td><span class="badge-access ${d.access==="Open"?"open":d.access==="Restricted"?"restricted":"unclear"}">${d.access}</span></td>
+        <td class="year-cell">${d.year > 0 ? d.year : '<span style="opacity:.4">—</span>'}</td>
+        <td class="pid-cell">${d.pid ? `<a href="${d.pidlink}" target="_blank" rel="noopener">${d.pid}</a>` : '<span class="pid-none">N/A</span>'}</td>
+      </tr>`).join("");
+  }
+
+  document.getElementById("shown-count").textContent = filtered.length;
+  document.getElementById("total-shown").textContent = datasets.length;
+
+  ["name","task","setting","language","access","year","pid"].forEach(k => {
+    const el = document.getElementById("th-"+k);
+    if (!el) return;
+    el.classList.toggle("sort-active", k===sortKey);
+    el.querySelector(".sort-arrow").textContent = k===sortKey ? (sortDir===1?"↑":"↓") : "↕";
+  });
+}
+
+function sortBy(key) { if(sortKey===key) sortDir*=-1; else{sortKey=key;sortDir=1;} render(); }
+function resetFilters() {
+  document.getElementById("search").value="";
+  ["filter-task","filter-setting","filter-access","filter-language","filter-year"].forEach(id=>document.getElementById(id).value="");
+  render();
+}
+
+document.getElementById("search").addEventListener("input", render);
+["filter-task","filter-setting","filter-access","filter-language","filter-year"].forEach(id=>document.getElementById(id).addEventListener("change",render));
+render();
+</script>
+</body>
+</html>
